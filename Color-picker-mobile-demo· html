@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Picker — Mobile Mockup Demo</title>
+  <style>
+    /* Reset + base */
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#8b5cf6;
+      --glass: rgba(255,255,255,0.06);
+      --muted: rgba(255,255,255,0.6);
+    }
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#eef2ff;background:linear-gradient(180deg,#020617 0%, #071029 100%);display:flex;align-items:center;justify-content:center}
+
+    /* phone mockup */
+    .phone {
+      width: 360px;
+      height: 780px;
+      border-radius: 36px;
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      box-shadow: 0 20px 50px rgba(2,6,23,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.03);
+      position: relative;
+      overflow: hidden;
+      display:flex;flex-direction:column;
+    }
+
+    .notch{height:6px;width:120px;background:rgba(0,0,0,0.3);border-radius:6px;margin:6px auto 12px}
+
+    .screen {
+      background: #000;
+      border-radius: 18px;
+      flex:1;
+      position:relative;
+      overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    /* top overlay */
+    .overlay {
+      position:absolute;top:14px;left:12px;right:12px;display:flex;align-items:center;gap:10px;justify-content:flex-start;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      padding:8px 12px;border-radius:12px;
+      backdrop-filter: blur(6px);
+      border:1px solid rgba(255,255,255,0.03);
+      z-index:20;
+    }
+    .swatch{width:18px;height:18px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:1px solid rgba(0,0,0,0.2)}
+    .label{font-weight:700;font-size:14px}
+    .sub{font-size:12px;color:var(--muted);margin-left:6px}
+
+    /* video + canvas */
+    video, canvas{max-width:100%;height:100%;object-fit:cover;display:block}
+    .camera-area{width:100%;height:100%;position:relative}
+    /* focus indicator */
+    .focus-target{position:absolute;width:84px;height:84px;border-radius:18px;border:2px dashed rgba(255,255,255,0.6);left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;align-items:center;justify-content:center}
+    .focus-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.9)}
+
+    /* bottom controls */
+    .controls{padding:12px 6px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .btn{background:var(--glass);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;font-weight:600}
+    .file{font-size:12px;color:var(--muted)}
+
+    /* result chip (temporary) */
+    .result-chip{position:absolute;left:50%;transform:translateX(-50%);bottom:110px;background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));padding:10px 14px;border-radius:999px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,0.03);backdrop-filter: blur(6px);z-index:19}
+
+    /* accessibility text for screen-readers */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* small responsive */
+    @media(max-width:420px){.phone{transform:scale(0.92)}}
+  </style>
+</head>
+<body>
+  <div class="phone" role="application" aria-label="Color detection mobile demo">
+    <div class="notch" aria-hidden="true"></div>
+
+    <div class="screen">
+      <div class="overlay" id="topOverlay" aria-live="polite">
+        <div class="swatch" id="swatch" style="background:#ff0000"></div>
+        <div>
+          <div class="label" id="detectedLabel">Detected Color: <span id="detectedName">Red</span></div>
+          <div class="sub" id="detectedRgb">RGB: (255, 0, 0)</div>
+        </div>
+      </div>
+
+      <div class="camera-area" id="cameraArea">
+        <!-- video for live camera feed -->
+        <video id="video" autoplay playsinline></video>
+        <!-- canvas used as hidden draw buffer to read pixels -->
+        <canvas id="buffer" style="display:none"></canvas>
+
+        <!-- focus target in center to show where color is read -->
+        <div class="focus-target" aria-hidden="true"><div class="focus-dot"></div></div>
+
+        <!-- floating result chip (optional) -->
+        <div class="result-chip" id="resultChip" style="display:none">
+          <div class="swatch" id="chipSwatch"></div>
+          <div style="font-weight:700" id="chipLabel">Red</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="startBtn">Start Camera</button>
+        <button class="btn" id="snapBtn">Detect Center Color</button>
+      </div>
+      <div style="text-align:right">
+        <label class="file btn">Upload Image
+          <input id="fileInput" type="file" accept="image/*" style="display:none">
+        </label>
+      </div>
+    </div>
+
+    <p class="sr-only" id="ariaStatus">No color detected yet</p>
+  </div>
+
+  <script>
+    // small palette to map to human-friendly names
+    const PALETTE = {
+      "Red": [255,0,0],
+      "Green": [0,128,0],
+      "Blue": [0,0,255],
+      "Yellow": [255,255,0],
+      "Cyan": [0,255,255],
+      "Magenta": [255,0,255],
+      "Orange": [255,165,0],
+      "Brown": [165,42,42],
+      "Pink": [255,192,203],
+      "Purple": [128,0,128],
+      "Black": [0,0,0],
+      "White": [255,255,255],
+      "Gray": [128,128,128]
+    };
+
+    const video = document.getElementById('video');
+    const buffer = document.getElementById('buffer');
+    const startBtn = document.getElementById('startBtn');
+    const snapBtn = document.getElementById('snapBtn');
+    const fileInput = document.getElementById('fileInput');
+    const swatch = document.getElementById('swatch');
+    const detectedName = document.getElementById('detectedName');
+    const detectedRgb = document.getElementById('detectedRgb');
+    const ariaStatus = document.getElementById('ariaStatus');
+    const resultChip = document.getElementById('resultChip');
+    const chipSwatch = document.getElementById('chipSwatch');
+    const chipLabel = document.getElementById('chipLabel');
+
+    let streamActive = false;
+
+    function closestColorName(r,g,b){
+      let best = {name:'Unknown',dist:Number.POSITIVE_INFINITY};
+      for(const name in PALETTE){
+        const [pr,pg,pb] = PALETTE[name];
+        const d = (pr-r)*(pr-r) + (pg-g)*(pg-g) + (pb-b)*(pb-b);
+        if(d < best.dist){ best = {name,dist:d}; }
+      }
+      return best.name;
+    }
+
+    async function startCamera(){
+      try{
+        const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+        video.srcObject = s;
+        streamActive = true;
+        startBtn.textContent = 'Stop Camera';
+      }catch(e){
+        alert('Camera access failed. You can instead upload an image.');
+        console.error(e);
+      }
+    }
+
+    function stopCamera(){
+      if(video.srcObject){
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+      streamActive = false;
+      startBtn.textContent = 'Start Camera';
+    }
+
+    startBtn.addEventListener('click', ()=>{
+      if(!streamActive) startCamera(); else stopCamera();
+    });
+
+    // draw current frame to buffer and read center pixel
+    function detectCenterColorFromVideo(){
+      if(!video.videoWidth) return;
+      buffer.width = video.videoWidth;
+      buffer.height = video.videoHeight;
+      const ctx = buffer.getContext('2d');
+      ctx.drawImage(video,0,0,buffer.width,buffer.height);
+
+      const cx = Math.floor(buffer.width/2);
+      const cy = Math.floor(buffer.height/2);
+      const p = ctx.getImageData(cx, cy, 1, 1).data;
+      const r = p[0], g = p[1], b = p[2];
+      showDetected(r,g,b);
+    }
+
+    // for uploaded image
+    function detectCenterColorFromImage(img){
+      buffer.width = img.naturalWidth || img.width;
+      buffer.height = img.naturalHeight || img.height;
+      const ctx = buffer.getContext('2d');
+      ctx.drawImage(img,0,0,buffer.width,buffer.height);
+      const cx = Math.floor(buffer.width/2);
+      const cy = Math.floor(buffer.height/2);
+      const p = ctx.getImageData(cx, cy, 1, 1).data;
+      const r = p[0], g = p[1], b = p[2];
+      showDetected(r,g,b);
+    }
+
+    function showDetected(r,g,b){
+      const name = closestColorName(r,g,b);
+      const rgbText = `RGB: (${r}, ${g}, ${b})`;
+      detectedName.textContent = name;
+      detectedRgb.textContent = rgbText;
+      swatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      chipSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      chipLabel.textContent = name;
+
+      // show floating chip for a second
+      resultChip.style.display = 'flex';
+      clearTimeout(resultChip._hideTimer);
+      resultChip._hideTimer = setTimeout(()=> resultChip.style.display='none', 1100);
+
+      // accessibility
+      ariaStatus.textContent = `Detected color ${name} with values ${r} ${g} ${b}`;
+
+      // update top overlay contrast (light text on dark swatch)
+      const luminance = (0.2126*r + 0.7152*g + 0.0722*b);
+      const useWhite = luminance < 140;
+      document.getElementById('detectedLabel').style.color = useWhite ? '#fff' : '#fff';
+    }
+
+    snapBtn.addEventListener('click', ()=>{
+      if(streamActive) detectCenterColorFromVideo(); else alert('Start camera or upload an image first.');
+    });
+
+    // file upload handler: show image in a temporary Image element then detect
+    fileInput.addEventListener('change', (ev)=>{
+      const f = ev.target.files[0];
+      if(!f) return;
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = ()=>{
+        // place image into the visible area by replacing video element with canvas preview
+        // for simplicity we draw the image on the video-sized canvas and keep overlay behavior
+        // hide video
+        video.style.display = 'none';
+        const ctx = buffer.getContext('2d');
+        buffer.width = img.naturalWidth;
+        buffer.height = img.naturalHeight;
+        ctx.drawImage(img,0,0);
+
+        // show detection result
+        detectCenterColorFromImage(img);
+      };
+      img.src = url;
+    });
+
+    // also support tap on screen to detect exact touched pixel
+    const cameraArea = document.getElementById('cameraArea');
+    cameraArea.addEventListener('click', function(e){
+      // if using video, map click coordinates to buffer pixel coords
+      const rect = cameraArea.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+
+      // map to buffer coordinate system
+      let bw = buffer.width || video.videoWidth || rect.width;
+      let bh = buffer.height || video.videoHeight || rect.height;
+      // compute scale between display area and buffer
+      const scaleX = bw / rect.width;
+      const scaleY = bh / rect.height;
+      const bx = Math.floor(cx * scaleX);
+      const by = Math.floor(cy * scaleY);
+
+      const ctx = buffer.getContext('2d');
+      try{
+        const p = ctx.getImageData(bx, by, 1, 1).data;
+        showDetected(p[0], p[1], p[2]);
+      }catch(err){
+        // if clicking before buffer setup, try to capture a frame first
+        if(streamActive) detectCenterColorFromVideo();
+      }
+    });
+
+    // stop camera when page hidden
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden) stopCamera();
+    });
+
+    // small helper: center-read every 2s while camera running (optional)
+    // Uncomment below if you want continuous detection
+    // setInterval(()=>{ if(streamActive) detectCenterColorFromVideo(); }, 2000);
+
+  </script>
+</body>
+</html>
