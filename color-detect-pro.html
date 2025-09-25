@@ -1,285 +1,183 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TrueShade Pro — Live Color Detector</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ColorDetect Pro — Live Color Picker</title>
+<meta name="description" content="Professional live color picker with camera, upload, history, contrast check, and snapshot."/>
 <style>
 :root{
-  --bg1:#071029; --bg2:#0f1724;
-  --glass: rgba(255,255,255,0.03);
-  --muted: rgba(255,255,255,0.7);
-  --primary:#7c3aed;
-  --radius:14px;
-  --ui-font: Inter, system-ui, "Segoe UI", Roboto, Arial;
+  --bg-1:#071029;--bg-2:#0f1724;--card:rgba(255,255,255,0.04);
+  --glass:rgba(255,255,255,0.03);--muted:rgba(255,255,255,0.7);
+  --accent:#7c3aed;--success:#10b981;--danger:#ef4444;
+  --radius:16px;--ui-font:"Inter",system-ui,"Segoe UI",Roboto,Arial;
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:var(--ui-font);background:linear-gradient(180deg,var(--bg2),var(--bg1));color:#eef2ff;display:flex;align-items:center;justify-content:center;padding:12px}
-.app{width:960px;max-width:96vw;border-radius:18px;padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));box-shadow:0 18px 50px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.02)}
-.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.logo{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-weight:800;color:white}
-.title{font-size:18px;font-weight:800}
-.subtitle{font-size:12px;color:var(--muted)}
-.main{display:grid;grid-template-columns:1fr 340px;gap:14px}
-.stage{background:#000;border-radius:14px;min-height:620px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
-.controls-bar{display:flex;gap:8px;align-items:center;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-bottom:1px solid rgba(255,255,255,0.02)}
-.btn{padding:10px 12px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.02);color:#eef2ff;font-weight:700;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
-.btn.primary{background:linear-gradient(90deg,#7c3aed,#4f46e5);box-shadow:0 8px 24px rgba(79,70,229,0.12)}
-.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
-.stage-body{position:relative;height:520px;display:flex;align-items:center;justify-content:center}
-video,.preview-img,canvas{max-width:100%;width:100%;height:100%;object-fit:cover;display:block}
-.preview-img{display:block;width:100%;height:100%;object-fit:contain;background:#0b0b0b}
-.center-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:18px;border:2px dashed rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:25;pointer-events:none}
+html,body{height:100%;margin:0;font-family:var(--ui-font);
+background:linear-gradient(180deg,var(--bg-2) 0%,var(--bg-1) 100%);
+color:#eef2ff;display:flex;align-items:center;justify-content:center;padding:18px}
+.frame{width:380px;max-width:96vw;border-radius:30px;padding:20px;
+background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+box-shadow:0 12px 40px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#4f46e5);
+display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;
+box-shadow:0 6px 18px rgba(124,58,237,0.18)}
+.title{font-size:16px;font-weight:700}
+.subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+.phone-screen{background:#000;border-radius:18px;height:600px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column}
+.screen-top-overlay{position:absolute;left:12px;right:12px;top:14px;z-index:40;display:flex;align-items:center;gap:12px;background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));padding:10px;border-radius:12px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.02)}
+.swatch{width:22px;height:22px;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.6);border:1px solid rgba(0,0,0,0.15)}
+.detected-info{display:flex;flex-direction:column}
+.detected-name{font-weight:800;font-size:14px}
+.detected-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.video-wrap{flex:1;position:relative;background:linear-gradient(180deg,#06070b, #0b0d12)}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.center-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:20px;border:2px dashed rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:30;pointer-events:none}
 .center-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6)}
-.floating-chip{position:absolute;left:50%;transform:translateX(-50%);bottom:78px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));padding:10px 14px;border-radius:999px;display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,0.02);backdrop-filter: blur(6px);z-index:30;transition:opacity .15s,transform .15s}
+.floating-chip{position:absolute;left:50%;transform:translateX(-50%);bottom:120px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));padding:10px 14px;border-radius:999px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,0.02);backdrop-filter: blur(6px);z-index:35;transition:opacity .18s,transform .18s}
 .floating-chip.hidden{opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none}
-.swatch{width:28px;height:28px;border-radius:8px;border:1px solid rgba(0,0,0,0.2);box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-.magnifier{position:absolute;width:120px;height:120px;border-radius:12px;border:2px solid rgba(255,255,255,0.06);overflow:hidden;z-index:40;display:none;background:#000;box-shadow:0 8px 30px rgba(2,6,23,0.6);}
-.magnifier canvas{width:100%;height:100%;display:block;transform-origin:center}
-.panel{padding:12px;display:flex;flex-direction:column;gap:12px}
-.card{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
-.big-color{display:flex;gap:12px;align-items:center}
-.big-swatch{width:72px;height:72px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
-.big-meta{flex:1}
-.color-name{font-weight:900;font-size:18px}
-.color-sub{font-size:13px;color:var(--muted);margin-top:6px}
-.meta-row{display:flex;gap:8px;align-items:center;margin-top:10px}
-.hex{font-weight:900;background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:8px}
-.copy-small{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
-.history-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto;padding-right:6px}
-.history-item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;background:rgba(0,0,0,0.16);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
-.hist-swatch{width:48px;height:48px;border-radius:8px;flex-shrink:0}
+.controls{display:flex;gap:10px;padding:12px;border-top:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg,transparent, rgba(0,0,0,0.12))}
+.btn{background:var(--card);padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;font-weight:700;color:#eef2ff;display:inline-flex;align-items:center;gap:8px}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+.btn.primary{background:linear-gradient(90deg,var(--accent),#4f46e5);box-shadow:0 8px 22px rgba(79,70,229,0.12)}
+.controls-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.toggles{display:flex;gap:8px;align-items:center}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.small{font-size:12px;color:var(--muted)}
+.bottom-panel{padding:12px;display:flex;gap:12px;align-items:flex-start}
+.details{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+.details .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.hex-box{font-weight:800;font-size:16px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.03);display:inline-block;min-width:110px;text-align:center}
+.history{width:140px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+.history h4{margin:0 0 8px 0;font-size:13px}
+.hist-list{display:flex;flex-direction:column;gap:8px;max-height:210px;overflow:auto;padding-right:6px}
+.hist-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;background:rgba(0,0,0,0.18);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+.hist-swatch{width:36px;height:36px;border-radius:8px;flex-shrink:0}
 .hist-meta{flex:1}
-.hist-name{font-weight:800}
-.hist-sub{font-size:12px;color:var(--muted)}
-.footer-note{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
-@media(max-width:920px){
-  .main{grid-template-columns:1fr;gap:12px}
-  .stage{order:2}
-  .panel{order:1}
-}
+.meta-name{font-weight:700}
+.meta-sub{font-size:12px;color:var(--muted)}
+.copy-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.02);font-weight:700;cursor:pointer}
+.contrast-check{margin-top:10px;font-size:13px;padding:6px 8px;border-radius:12px;background:rgba(0,0,0,0.2);}
+.muted{color:var(--muted);font-size:13px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:420px){.frame{width:100%}.phone-screen{height:560px}}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="top">
-    <div class="logo">TS</div>
-    <div>
-      <div class="title">TrueShade Pro</div>
-      <div class="subtitle">Live camera + Upload — precise color picking</div>
+<div class="frame" role="application" aria-label="ColorDetect application">
+<div class="header">
+  <div class="logo" aria-hidden="true">CD</div>
+  <div>
+    <div class="title">ColorDetect Pro</div>
+    <div class="subtitle">Camera / Upload · HEX · History · Contrast · Snapshot</div>
+  </div>
+</div>
+<div class="phone-screen" id="phoneScreen">
+  <div class="screen-top-overlay" aria-live="polite">
+    <div class="swatch" id="swatch" style="background:#ff0000"></div>
+    <div class="detected-info">
+      <div class="detected-name" id="detectedName">Detected: <span id="nameText">Red</span></div>
+      <div class="detected-meta" id="metaText">RGB: (255,0,0) · HEX: #FF0000</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <div class="small muted" id="fpsBadge">— FPS</div>
     </div>
   </div>
-
-  <div class="main">
-    <div class="stage">
-      <div class="controls-bar">
-        <button class="btn primary" id="startStopBtn">Start Camera</button>
-        <button class="btn" id="detectNowBtn">Detect Now</button>
-        <label class="btn ghost" for="uploadInput">Upload Image
-          <input id="uploadInput" type="file" accept="image/*" />
-        </label>
-        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <label><input id="continuousToggle" type="checkbox"> Continuous</label>
-        </div>
-      </div>
-
-      <div class="stage-body" id="stageBody">
-        <video id="video" autoplay playsinline style="display:none"></video>
-        <img id="previewImg" class="preview-img" style="display:none"/>
-        <canvas id="buffer" style="display:none"></canvas>
-        <div class="center-cross"><div class="center-dot"></div></div>
-        <div class="floating-chip hidden" id="floatingChip">
-          <div class="swatch" id="chipSwatch"></div>
-          <div>
-            <div id="chipName"></div>
-            <div style="font-size:13px;color:var(--muted)" id="chipMeta"></div>
-          </div>
-        </div>
-        <div class="magnifier" id="magnifier"><canvas id="magnCanvas"></canvas></div>
+  <div class="video-wrap" id="videoWrap" aria-hidden="false">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="buffer" width="1" height="1" style="display:none"></canvas>
+    <div class="center-cross" aria-hidden="true"><div class="center-dot"></div></div>
+    <div class="floating-chip hidden" id="floatingChip" role="status" aria-atomic="true">
+      <div class="swatch" id="chipSwatch" style="background:#ff0000"></div>
+      <div style="font-weight:800" id="chipLabel">Red</div>
+    </div>
+  </div>
+  <div class="controls" role="region" aria-label="controls">
+    <button class="btn primary" id="startStopBtn" title="Start / Stop camera">Start Camera</button>
+    <button class="btn ghost" id="snapBtn" title="Detect Now">Detect Now</button>
+    <button class="btn ghost" id="saveSwatchBtn" title="Save current color">Save Swatch</button>
+    <div class="controls-right">
+      <label class="btn ghost" style="cursor:pointer">Upload Image<input id="fileInput" type="file" accept="image/*" style="display:none"/></label>
+      <div class="toggles">
+        <label class="toggle"><input id="continuousToggle" type="checkbox"/> <span class="muted">Continuous</span></label>
+        <label class="toggle"><input id="autoHistoryToggle" type="checkbox" checked/> <span class="muted">Save history</span></label>
       </div>
     </div>
-
-    <div class="panel">
-      <div class="card big-color">
-        <div class="big-swatch" id="bigSwatch"></div>
-        <div class="big-meta">
-          <div class="color-name" id="colorName"></div>
-          <div class="color-sub" id="colorSub"></div>
-          <div class="meta-row">
-            <div class="hex" id="hexLabel"></div>
-            <button class="copy-small" id="copyHex">Copy HEX</button>
-            <button class="copy-small" id="exportHistory">Export</button>
-            <button class="copy-small" id="clearHistory">Clear</button>
+  </div>
+  <div class="bottom-panel">
+    <div class="details">
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted">Name</div>
+          <div style="margin-top:6px;font-weight:900;font-size:18px" id="bigName">Red</div>
+        </div>
+        <div style="text-align:right">
+          <div class="muted">HEX</div>
+          <div style="margin-top:6px" class="hex-box" id="hexBox">#FF0000</div>
+          <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+            <button class="copy-btn" id="copyHex">Copy HEX</button>
+            <button class="copy-btn" id="downloadHistory">Export</button>
           </div>
         </div>
       </div>
-
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-weight:800">History</div>
-          <div style="font-size:13px;color:var(--muted)">Tap to reuse</div>
-        </div>
-        <div class="history-list" id="historyList"></div>
+      <div class="contrast-check" id="contrastCheck">Contrast: —</div>
+      <div class="row" style="margin-top:6px">
+        <div class="muted">Info</div>
+        <div style="margin-left:auto" id="ariaStatus" class="muted sr-only">No color detected yet</div>
       </div>
-
-      <div class="card" style="text-align:center">
-        <div style="font-weight:800">Tips</div>
-        <div class="footer-note">Continuous: live tracking. Tap image/video to pick center pixel. Works on phones & laptops.</div>
-      </div>
+    </div>
+    <div class="history" aria-live="polite">
+      <h4>History</h4>
+      <div class="hist-list" id="historyList" aria-label="Recent colors"></div>
     </div>
   </div>
 </div>
+</div>
+<p class="sr-only" id="screenReaderLog">No color detected</p>
 
 <script>
-const COLORS = [
-  ["Red",255,0,0,"#FF0000"],["Green",0,255,0,"#00FF00"],["Blue",0,0,255,"#0000FF"],
-  ["Black",0,0,0,"#000000"],["White",255,255,255,"#FFFFFF"],["Yellow",255,255,0,"#FFFF00"],
-  ["Cyan",0,255,255,"#00FFFF"],["Magenta",255,0,255,"#FF00FF"],["Orange",255,165,0,"#FFA500"]
-];
+const COLORS_DB=[["Black",0,0,0,"#000000"],["Navy",0,0,128,"#000080"],["Red",255,0,0,"#FF0000"],["Green",0,128,0,"#008000"],["Blue",0,0,255,"#0000FF"],["Yellow",255,255,0,"#FFFF00"],["White",255,255,255,"#FFFFFF"]];
+const video=document.getElementById('video');const buffer=document.getElementById('buffer');
+const startStopBtn=document.getElementById('startStopBtn');const snapBtn=document.getElementById('snapBtn');
+const fileInput=document.getElementById('fileInput');const continuousToggle=document.getElementById('continuousToggle');
+const autoHistoryToggle=document.getElementById('autoHistoryToggle');const swatch=document.getElementById('swatch');
+const nameText=document.getElementById('nameText');const metaText=document.getElementById('metaText');
+const hexBox=document.getElementById('hexBox');const bigName=document.getElementById('bigName');
+const floatingChip=document.getElementById('floatingChip');const chipSwatch=document.getElementById('chipSwatch');
+const chipLabel=document.getElementById('chipLabel');const historyList=document.getElementById('historyList');
+const copyHexBtn=document.getElementById('copyHex');const downloadHistoryBtn=document.getElementById('downloadHistory');
+const fpsBadge=document.getElementById('fpsBadge');const ariaStatus=document.getElementById('ariaStatus');
+const screenReaderLog=document.getElementById('screenReaderLog');const contrastCheck=document.getElementById('contrastCheck');
+const saveSwatchBtn=document.getElementById('saveSwatchBtn');
 
-const startStopBtn = document.getElementById('startStopBtn');
-const detectNowBtn = document.getElementById('detectNowBtn');
-const uploadInput = document.getElementById('uploadInput');
-const continuousToggle = document.getElementById('continuousToggle');
-
-const video = document.getElementById('video');
-const previewImg = document.getElementById('previewImg');
-const buffer = document.getElementById('buffer');
-const magnCanvas = document.getElementById('magnCanvas');
-const magnifier = document.getElementById('magnifier');
-
-const floatingChip = document.getElementById('floatingChip');
-const chipSwatch = document.getElementById('chipSwatch');
-const chipName = document.getElementById('chipName');
-const chipMeta = document.getElementById('chipMeta');
-
-const bigSwatch = document.getElementById('bigSwatch');
-const colorNameEl = document.getElementById('colorName');
-const colorSubEl = document.getElementById('colorSub');
-const hexLabel = document.getElementById('hexLabel');
-const copyHexBtn = document.getElementById('copyHex');
-const exportBtn = document.getElementById('exportHistory');
-const clearHistoryBtn = document.getElementById('clearHistory');
-const historyList = document.getElementById('historyList');
-
-const stageBody = document.getElementById('stageBody');
-const bufferCtx = buffer.getContext('2d');
-const magnCtx = magnCanvas.getContext('2d');
-
-let stream=null, anim=null, history=[];
-
-// helpers
-function rgbToHex(r,g,b){ return "#"+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();}
-function clamp(v){ return Math.max(0,Math.min(255,Math.round(v))); }
-function findClosestColor(r,g,b){
-  let best={d:Infinity,idx:0};
-  for(let i=0;i<COLORS.length;i++){
-    const c=COLORS[i];
-    const d=(c[1]-r)**2 + (c[2]-g)**2 + (c[3]-b)**2;
-    if(d<best.d){best.d=d;best.idx=i;}
-  }
-  const c=COLORS[best.idx];
-  return {name:c[0],r:c[1],g:c[2],b:c[3],hex:c[4]};
-}
-function updateDisplay(r,g,b){
-  const hex=rgbToHex(r,g,b);
-  const found=findClosestColor(r,g,b);
-  colorNameEl.textContent=found.name;
-  colorSubEl.textContent=`RGB (${r},${g},${b}) · HEX ${hex}`;
-  hexLabel.textContent=hex;
-  bigSwatch.style.background=`rgb(${r},${g},${b})`;
-  chipSwatch.style.background=`rgb(${r},${g},${b})`;
-  chipName.textContent=found.name;
-  chipMeta.textContent=`RGB (${r},${g},${b}) · ${hex}`;
-  pushHistory(found.name,r,g,b,hex);
-  showFloating();
-}
-function pushHistory(name,r,g,b,hex){
-  history.unshift({name,r,g,b,hex,time:new Date().toLocaleTimeString()});
-  if(history.length>12) history.length=12;
-  renderHistory();
-}
-function renderHistory(){
-  historyList.innerHTML='';
-  history.forEach((h,i)=>{
-    const item=document.createElement('div');
-    item.className='history-item';
-    item.innerHTML=`<div class="hist-swatch" style="background:${h.hex}"></div>
-    <div class="hist-meta"><div class="hist-name">${h.name}</div><div class="hist-sub">${h.hex} · ${h.time}</div></div>
-    <button class="copy-small" data-idx="${i}">Copy</button>`;
-    item.addEventListener('click',()=>updateDisplay(h.r,h.g,h.b));
-    item.querySelector('button.copy-small').addEventListener('click',ev=>{
-      ev.stopPropagation();
-      navigator.clipboard.writeText(h.hex).then(()=>{ev.target.textContent='Copied'; setTimeout(()=>ev.target.textContent='Copy',800)});
-    });
-    historyList.appendChild(item);
-  });
-}
-
-function showFloating(){ floatingChip.classList.remove('hidden'); setTimeout(()=>floatingChip.classList.add('hidden'),3000); }
-
-function detectCenter(){
-  let w,h;
-  buffer.width=video.videoWidth||previewImg.naturalWidth;
-  buffer.height=video.videoHeight||previewImg.naturalHeight;
-  w=buffer.width; h=buffer.height;
-  bufferCtx.clearRect(0,0,w,h);
-  if(video.style.display!=='none') bufferCtx.drawImage(video,0,0,w,h);
-  else if(previewImg.style.display!=='none') bufferCtx.drawImage(previewImg,0,0,w,h);
-  const x=Math.floor(w/2), y=Math.floor(h/2);
-  const p=bufferCtx.getImageData(x,y,1,1).data;
-  updateDisplay(p[0],p[1],p[2]);
-  drawMagnifier(x,y);
-}
-function drawMagnifier(cx,cy){
-  magnifier.style.display='block';
-  const magSize=120,zoom=6;
-  magnCanvas.width=magnCanvas.height=magSize;
-  magnCtx.clearRect(0,0,magSize,magSize);
-  magnCtx.imageSmoothingEnabled=false;
-  magnCtx.drawImage(buffer,cx-10,cy-10,20,20,0,0,magSize,magSize);
-}
-
-function startCamera(){
-  if(stream){ stopCamera(); return;}
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{
-    stream=s;
-    video.srcObject=s;
-    video.style.display='block';
-    previewImg.style.display='none';
-    startStopBtn.textContent='Stop Camera';
-    anim=requestAnimationFrame(loop);
-  }).catch(console.error);
-}
-function stopCamera(){
-  if(stream){stream.getTracks().forEach(t=>t.stop()); stream=null;}
-  video.style.display='none';
-  startStopBtn.textContent='Start Camera';
-  cancelAnimationFrame(anim);
-  magnifier.style.display='none';
-}
-
-function loop(){
-  if(continuousToggle.checked) detectCenter();
-  anim=requestAnimationFrame(loop);
-}
-
-startStopBtn.addEventListener('click',startCamera);
-detectNowBtn.addEventListener('click',detectCenter);
-continuousToggle.addEventListener('change',()=>{if(continuousToggle.checked) anim=requestAnimationFrame(loop); else cancelAnimationFrame(anim);});
-
-uploadInput.addEventListener('change',ev=>{
-  stopCamera();
-  const file=ev.target.files[0];
-  if(file){
-    previewImg.src=URL.createObjectURL(file);
-    previewImg.style.display='block';
-  }
-});
-
-copyHexBtn.addEventListener('click',()=>navigator.clipboard.writeText(hexLabel.textContent));
-exportBtn.addEventListener('click',()=>{const text=history.map(h=>`${h.time}: ${h.name} ${h.hex}`).join('\n');navigator.clipboard.writeText(text)});
-clearHistoryBtn.addEventListener('click',()=>{history=[];renderHistory();});
+let stream=null;let animFrame=null;let history=[];
+function rgbToHex(r,g,b){return"#"+[r,g,b].map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase();}
+function closestColor(r,g,b){let best={dist:Infinity,idx:0};for(let i=0;i<COLORS_DB.length;i++){const c=COLORS_DB[i];const dr=c[1]-r,dg=c[2]-g,db=c[3]-b,d=dr*dr+dg*dg+db*db;if(d<best.dist){best.dist=d;best.idx=i;}}const c=COLORS_DB[best.idx];return{name:c[0],r:c[1],g:c[2],b:c[3],hex:c[4],distance:Math.sqrt(best.dist)};}
+function updateUI(r,g,b){const hex=rgbToHex(r,g,b);const found=closestColor(r,g,b);nameText.textContent=found.name;bigName.textContent=found.name;
+metaText.textContent=`RGB: (${r},${g},${b}) · HEX: ${hex}`;hexBox.textContent=hex;swatch.style.background=`rgb(${r},${g},${b})`;
+chipSwatch.style.background=`rgb(${r},${g},${b})`;chipLabel.textContent=found.name;
+const sr=`Detected ${found.name}, ${hex}, RGB ${r} ${g} ${b}`;ariaStatus.textContent=sr;screenReaderLog.textContent=sr;
+updateContrastCheck(r,g,b);}
+function pushHistory(name,r,g,b,hex){if(!autoHistoryToggle.checked)return;history.unshift({name,r,g,b,hex,time:(new Date()).toISOString()});if(history.length>5)history.pop();renderHistory();}
+function renderHistory(){historyList.innerHTML="";history.forEach((h,idx)=>{const item=document.createElement('div');item.className='hist-item';item.innerHTML=`<div class="hist-swatch" style="background:${h.hex}"></div><div class="hist-meta"><div class="meta-name">${h.name}</div><div class="meta-sub">${h.hex} · ${h.time.split("T")[1].slice(0,8)}</div></div><button class="copy-btn" data-idx="${idx}">Copy</button>`;item.addEventListener('click',(ev)=>{if(ev.target&&ev.target.classList.contains('copy-btn'))return;updateUI(h.r,h.g,h.b);});item.querySelector('.copy-btn').addEventListener('click',(ev)=>{ev.stopPropagation();navigator.clipboard.writeText(h.hex).then(()=>{ev.target.textContent='Copied';setTimeout(()=>ev.target.textContent='Copy',900);});});historyList.appendChild(item);});}
+async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});video.srcObject=stream;startStopBtn.textContent="Stop Camera";startDetectLoop();}catch(err){alert("Camera access failed — use Upload Image instead.");console.error(err);}}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;startStopBtn.textContent="Start Camera";stopDetectLoop();}
+startStopBtn.addEventListener('click',()=>{if(!stream)startCamera();else stopCamera();});
+function startDetectLoop(){if(animFrame)return;function loop(now){animFrame=requestAnimationFrame(loop);if(continuousToggle.checked)detectCenterColor();}animFrame=requestAnimationFrame(loop);}
+function stopDetectLoop(){if(animFrame){cancelAnimationFrame(animFrame);animFrame=null;}}
+function detectCenterColor(){if(!video.videoWidth||!video.videoHeight)return;const w=video.videoWidth,h=video.videoHeight;buffer.width=w;buffer.height=h;const ctx=buffer.getContext('2d');ctx.drawImage(video,0,0,w,h);const cx=Math.floor(w/2),cy=Math.floor(h/2);const p=ctx.getImageData(cx,cy,1,1).data;const r=p[0],g=p[1],b=p[2];updateUI(r,g,b);floatingChip.classList.remove('hidden');clearTimeout(floatingChip._hide);floatingChip._hide=setTimeout(()=>floatingChip.classList.add('hidden'),900);pushHistory(closestColor(r,g,b).name,r,g,b,rgbToHex(r,g,b));}
+snapBtn.addEventListener('click',()=>{if(stream)detectCenterColor();else alert('Start camera or upload image first.');});
+fileInput.addEventListener('change',(ev)=>{const f=ev.target.files[0];if(!f)return;const url=URL.createObjectURL(f);const img=new Image();img.onload=()=>{buffer.width=img.naturalWidth;buffer.height=img.naturalHeight;const ctx=buffer.getContext('2d');ctx.drawImage(img,0,0);const cx=Math.floor(buffer.width/2),cy=Math.floor(buffer.height/2);const p=ctx.getImageData(cx,cy,1,1).data;const r=p[0],g=p[1],b=p[2];updateUI(r,g,b);floatingChip.classList.remove('hidden');clearTimeout(floatingChip._hide);floatingChip._hide=setTimeout(()=>floatingChip.classList.add('hidden'),900);pushHistory(closestColor(r,g,b).name,r,g,b,rgbToHex(r,g,b));if(stream){stopCamera();}};img.onerror=()=>alert('Image failed to load.');img.src=url;});
+document.getElementById('videoWrap').addEventListener('click',function(e){const rect=e.currentTarget.getBoundingClientRect();const cx=e.clientX-rect.left;const cy=e.clientY-rect.top;const bw=buffer.width||video.videoWidth||rect.width;const bh=buffer.height||video.videoHeight||rect.height;const scaleX=bw/rect.width;const scaleY=bh/rect.height;const bx=Math.floor(cx*scaleX);const by=Math.floor(cy*scaleY);try{const ctx=buffer.getContext('2d');const p=ctx.getImageData(bx,by,1,1).data;const r=p[0],g=p[1],b=p[2];updateUI(r,g,b);pushHistory(closestColor(r,g,b).name,r,g,b,rgbToHex(r,g,b));}catch(err){if(stream)detectCenterColor();}});
+copyHexBtn.addEventListener('click',()=>{navigator.clipboard.writeText(hexBox.textContent.trim()).then(()=>{copyHexBtn.textContent='Copied';setTimeout(()=>copyHexBtn.textContent='Copy HEX',900);});});
+downloadHistoryBtn.addEventListener('click'=>{const blob=new Blob([JSON.stringify(history,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='color-history.json';a.click();URL.revokeObjectURL(url);});
+saveSwatchBtn.addEventListener('click',()=>{const c=document.createElement('canvas');c.width=64;c.height=64;const ctx=c.getContext('2d');ctx.fillStyle=swatch.style.background;ctx.fillRect(0,0,64,64);c.toBlob(blob=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`swatch_${Date.now()}.png`;a.click();URL.revokeObjectURL(url);});});
+function updateContrastCheck(r,g,b){const L= (0.2126*r+0.7152*g+0.0722*b)/255;contrastCheck.textContent=`Contrast with white text: ${L<0.5?"Readable":"Unreadable"}`;}
+renderHistory();
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stopCamera();});
+window.addEventListener('beforeunload',()=>{if(stream)stopCamera();});
+window.addEventListener('keydown',(e)=>{if(e.code==='Space'){e.preventDefault();if(document.activeElement===document.body)snapBtn.click();}});
+setTimeout(()=>{if(!localStorage.getItem('seenGuide')){alert('Tip: Start Camera, enable Continuous, or upload image.');localStorage.setItem('seenGuide','1');}},800);
 </script>
 </body>
 </html>
