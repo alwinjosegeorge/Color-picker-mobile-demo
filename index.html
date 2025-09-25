@@ -3,123 +3,361 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrueShade Pro — Color Detector</title>
+<title>TrueShade Pro — Live Color Detector</title>
+<meta name="description" content="Professional live color detector with camera & upload, continuous tracking, copy HEX, and history panel.">
 <style>
+/* =======================
+   ROOT & VARIABLES
+======================= */
 :root{
-  --bg:#f3f4f6; --card-bg:#ffffff; --primary:#5b21b6; --secondary:#7c3aed; --text:#111827;
-  --muted:#6b7280; --radius:12px; --btn-padding:14px 22px;
+  --bg-dark:#071029;
+  --bg-light:#0f1724;
+  --primary:#7c3aed;
+  --accent-gradient:linear-gradient(90deg,#7c3aed,#4f46e5);
+  --muted:rgba(255,255,255,0.7);
+  --radius:14px;
+  --glass:rgba(255,255,255,0.03);
+  --success:#10b981;
+  --danger:#ef4444;
+  --ui-font: 'Inter', system-ui, "Segoe UI", Roboto, Arial;
+  --transition:.25s ease-in-out;
 }
-*{box-sizing:border-box;margin:0;padding:0;font-family:Inter, sans-serif;}
-body{background:var(--bg);display:flex;justify-content:center;padding:20px;color:var(--text);}
-.app{width:960px;max-width:95vw;background:var(--card-bg);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,0.1);overflow:hidden;}
-.header{padding:20px;text-align:center;}
-.header h1{color:var(--primary);font-size:28px;}
-.header p{color:var(--muted);margin-top:4px;}
-.main{display:flex;gap:20px;padding:20px;flex-wrap:wrap;}
-.stage, .panel{flex:1;min-width:300px;background:#f9fafb;border-radius:var(--radius);padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);}
-.video-section, .upload-section{margin-bottom:16px;text-align:center;}
-video, img{width:100%;border-radius:var(--radius);border:1px solid #e5e7eb;}
-button{padding:var(--btn-padding);border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;font-size:16px;transition:0.15s;}
-button.primary{background:var(--primary);color:#fff;margin:6px;}
-button.secondary{background:var(--secondary);color:#fff;margin:6px;}
-button:hover{opacity:.9;transform:translateY(-1px);}
-.panel h2{margin-bottom:12px;color:var(--primary);}
-.color-display{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-.swatch{width:60px;height:60px;border-radius:var(--radius);border:1px solid #e5e7eb;}
-.color-info{flex:1;}
-.color-info p{margin-bottom:4px;color:var(--text);}
-#hexLabel{font-weight:700;}
-.history{max-height:250px;overflow-y:auto;margin-top:12px;}
-.history-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius);background:#f3f4f6;margin-bottom:6px;cursor:pointer;}
-.hist-swatch{width:36px;height:36px;border-radius:var(--radius);border:1px solid #e5e7eb;}
-.hist-meta{flex:1;font-size:14px;color:var(--text);}
-input[type=file]{display:none;}
+
+/* =======================
+   GLOBAL RESET & LAYOUT
+======================= */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;font-family:var(--ui-font);background:linear-gradient(180deg,var(--bg-light),var(--bg-dark));color:#eef2ff;display:flex;justify-content:center;align-items:center;padding:12px}
+button{cursor:pointer;outline:none;border:none}
+a{text-decoration:none;color:inherit}
+
+/* =======================
+   APP CONTAINER
+======================= */
+.app{
+  width:960px; max-width:96vw; border-radius:var(--radius); padding:18px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  box-shadow:0 18px 50px rgba(2,6,23,0.7); border:1px solid rgba(255,255,255,0.02);
+  display:flex; flex-direction:column; gap:16px;
+}
+
+/* =======================
+   HEADER
+======================= */
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.logo{width:52px;height:52px;border-radius:12px;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:22px;box-shadow:0 8px 20px rgba(79,70,229,0.2)}
+.title{font-size:20px;font-weight:900}
+.subtitle{font-size:13px;color:var(--muted)}
+
+/* =======================
+   MAIN GRID
+======================= */
+.main{display:grid;grid-template-columns:1fr 360px;gap:16px}
+
+/* =======================
+   STAGE / CAMERA + UPLOAD
+======================= */
+.stage{
+  background:#000;border-radius:var(--radius);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03);
+  display:flex;flex-direction:column;
+}
+.controls-bar{
+  display:flex;align-items:center;gap:8px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-bottom:1px solid rgba(255,255,255,0.02);
+}
+.btn{
+  padding:12px 16px;border-radius:var(--radius);background:var(--glass);border:1px solid rgba(255,255,255,0.02);color:#eef2ff;font-weight:700;display:inline-flex;gap:8px;align-items:center;transition:all var(--transition);
+}
+.btn:hover{background:rgba(255,255,255,0.06)}
+.btn.primary{background:var(--accent-gradient);box-shadow:0 8px 24px rgba(79,70,229,0.12)}
+.btn.large{padding:14px 22px;font-size:15px}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+.mode-switch{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:13px}
+.toggle{display:flex;align-items:center;gap:6px;color:var(--muted)}
+input[type=file]{display:none}
+
+/* =======================
+   STAGE BODY
+======================= */
+.stage-body{position:relative;height:540px;display:flex;align-items:center;justify-content:center;background:#0b0b0b}
+video, .preview-img, canvas{max-width:100%;width:100%;height:100%;object-fit:cover;display:block}
+.preview-img{display:block;width:100%;height:100%;object-fit:contain;background:#0b0b0b}
+.center-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:18px;border:2px dashed rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:25;pointer-events:none}
+.center-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6)}
+.floating-chip{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:88px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  padding:12px 16px;border-radius:999px;display:flex;align-items:center;gap:14px;
+  border:1px solid rgba(255,255,255,0.02);backdrop-filter: blur(6px);z-index:30;transition:all .2s;
+}
+.floating-chip.hidden{opacity:0;transform:translateX(-50%) translateY(10px);pointer-events:none}
+.swatch{width:32px;height:32px;border-radius:10px;border:1px solid rgba(0,0,0,0.2);box-shadow:0 6px 20px rgba(0,0,0,0.5)}
+
+/* =======================
+   MAGNIFIER
+======================= */
+.magnifier{
+  position:absolute;width:140px;height:140px;border-radius:16px;border:2px solid rgba(255,255,255,0.06);overflow:hidden;z-index:40;display:none;background:#000;
+  box-shadow:0 8px 30px rgba(2,6,23,0.6);
+}
+.magnifier canvas{width:100%;height:100%;display:block;transform-origin:center}
+
+/* =======================
+   RIGHT PANEL: INFO + HISTORY
+======================= */
+.panel{padding:12px;display:flex;flex-direction:column;gap:16px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+.big-color{display:flex;gap:12px;align-items:center}
+.big-swatch{width:80px;height:80px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+.big-meta{flex:1}
+.color-name{font-weight:900;font-size:20px}
+.color-sub{font-size:13px;color:var(--muted);margin-top:6px}
+.meta-row{display:flex;gap:10px;align-items:center;margin-top:12px}
+.hex{font-weight:900;background:rgba(255,255,255,0.03);padding:6px 12px;border-radius:10px;cursor:pointer;transition:all var(--transition)}
+.copy-small{padding:6px 12px;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.02);transition:all var(--transition)}
+.copy-small:hover{background:rgba(255,255,255,0.06)}
+
+.history-list{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow:auto;padding-right:6px}
+.history-item{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:rgba(0,0,0,0.16);cursor:pointer;border:1px solid rgba(255,255,255,0.02);transition:all var(--transition)}
+.history-item:hover{background:rgba(255,255,255,0.06)}
+.hist-swatch{width:52px;height:52px;border-radius:10px;flex-shrink:0}
+.hist-meta{flex:1}
+.hist-name{font-weight:800}
+.hist-sub{font-size:12px;color:var(--muted)}
+
+.footer-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;}
+
+/* =======================
+   RESPONSIVE
+======================= */
+@media(max-width:960px){
+  .main{grid-template-columns:1fr;gap:12px}
+  .stage{order:2}
+  .panel{order:1}
+}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="header">
-    <h1>TrueShade Pro</h1>
-    <p>Professional color detection — Camera or Upload</p>
-  </div>
-  <div class="main">
-    <div class="stage">
-      <h2>Camera Detection</h2>
-      <div class="video-section">
-        <video id="video" autoplay muted playsinline style="display:none"></video>
-        <canvas id="canvas" style="display:none"></canvas>
-      </div>
-      <div style="text-align:center;">
-        <button class="primary" id="startStopBtn">Start Camera</button>
-        <button class="secondary" id="detectNowBtn">Detect Now</button>
-      </div>
-      <h2>Upload Image</h2>
-      <div class="upload-section">
-        <label for="uploadInput">
-          <button class="primary">Upload Image</button>
-        </label>
-        <input id="uploadInput" type="file" accept="image/*">
-        <img id="previewImg" alt="Preview" style="display:none;margin-top:10px;">
-      </div>
+  <!-- HEADER -->
+  <div class="top">
+    <div class="logo">TS</div>
+    <div>
+      <div class="title">TrueShade Pro</div>
+      <div class="subtitle">Live camera + Upload — professional color picker</div>
     </div>
-    <div class="panel">
-      <h2>Detected Color</h2>
-      <div class="color-display">
-        <div class="swatch" id="bigSwatch"></div>
-        <div class="color-info">
-          <p id="colorName">—</p>
-          <p id="colorSub">—</p>
-          <p>HEX: <span id="hexLabel">—</span></p>
-          <button class="secondary" id="copyHex">Copy HEX</button>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main">
+    <!-- STAGE -->
+    <div class="stage">
+      <div class="controls-bar">
+        <button class="btn primary large" id="startStopBtn">Start Camera</button>
+        <button class="btn large" id="detectNowBtn">Detect Now</button>
+        <label class="btn ghost large" for="uploadInput">Upload Image
+          <input type="file" id="uploadInput" accept="image/*">
+        </label>
+        <div class="mode-switch">
+          <label class="toggle"><input type="radio" id="modeCamera" name="mode" checked> Camera</label>
+          <label class="toggle"><input type="radio" id="modeUpload" name="mode"> Upload</label>
+          <label class="toggle"><input type="checkbox" id="continuousToggle"> Continuous</label>
+        </div>
+        <div style="margin-left:auto;font-size:13px;color:var(--muted)" id="fps">— FPS</div>
+      </div>
+
+      <div class="stage-body" id="stageBody">
+        <video id="video" autoplay playsinline style="display:none"></video>
+        <img id="previewImg" class="preview-img" alt="Uploaded preview" style="display:none"/>
+        <canvas id="buffer" style="display:none"></canvas>
+
+        <div class="center-cross"><div class="center-dot"></div></div>
+        <div class="floating-chip hidden" id="floatingChip">
+          <div class="swatch" id="chipSwatch" style="background:#ff0000"></div>
+          <div>
+            <div style="font-weight:800" id="chipName">Red</div>
+            <div style="font-size:13px;color:var(--muted)" id="chipMeta">RGB (255,0,0) · #FF0000</div>
+          </div>
+        </div>
+
+        <div class="magnifier" id="magnifier">
+          <canvas id="magnCanvas"></canvas>
         </div>
       </div>
-      <h2>History</h2>
-      <div class="history" id="historyList"></div>
-      <button class="secondary" id="clearHistory">Clear History</button>
+    </div>
+
+    <!-- PANEL -->
+    <div class="panel">
+      <div class="card big-color">
+        <div class="big-swatch" id="bigSwatch" style="background:#ff0000"></div>
+        <div class="big-meta">
+          <div class="color-name" id="colorName">Red</div>
+          <div class="color-sub" id="colorSub">RGB (255, 0, 0) · HEX #FF0000</div>
+          <div class="meta-row">
+            <div class="hex" id="hexLabel">#FF0000</div>
+            <button class="copy-small" id="copyHex">Copy HEX</button>
+            <button class="copy-small" id="exportHistory">Export</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-weight:800">History</div>
+          <div style="font-size:13px;color:var(--muted)">Click to reuse · Copy quick</div>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+
+      <div class="card" style="text-align:center">
+        <div style="font-weight:800">Tips</div>
+        <div class="footer-note">Use <strong>Continuous</strong> for live tracking. Tap image to pick precise pixel. Works on phones & laptops (HTTPS required for camera).</div>
+      </div>
     </div>
   </div>
+
+  <div class="footer-note">Made with ❤️ — TrueShade Pro</div>
 </div>
 
 <script>
-// Elements
-let video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
-let previewImg=document.getElementById('previewImg'), bigSwatch=document.getElementById('bigSwatch');
-let colorNameEl=document.getElementById('colorName'), colorSubEl=document.getElementById('colorSub'), hexLabel=document.getElementById('hexLabel');
-let historyList=document.getElementById('historyList');
+// ========= COLORS DB =========
+const COLORS=[
+["Black",0,0,0,"#000000"],["Red",255,0,0,"#FF0000"],["Green",0,255,0,"#00FF00"],["Blue",0,0,255,"#0000FF"],
+["Yellow",255,255,0,"#FFFF00"],["Magenta",255,0,255,"#FF00FF"],["Cyan",0,255,255,"#00FFFF"],["White",255,255,255,"#FFFFFF"]
+];
+
+// ========= DOM REFS =========
+const startStopBtn=document.getElementById('startStopBtn');
+const detectNowBtn=document.getElementById('detectNowBtn');
+const uploadInput=document.getElementById('uploadInput');
+const modeCamera=document.getElementById('modeCamera');
+const modeUpload=document.getElementById('modeUpload');
+const continuousToggle=document.getElementById('continuousToggle');
+const video=document.getElementById('video');
+const previewImg=document.getElementById('previewImg');
+const buffer=document.getElementById('buffer');
+const floatingChip=document.getElementById('floatingChip');
+const chipSwatch=document.getElementById('chipSwatch');
+const chipName=document.getElementById('chipName');
+const chipMeta=document.getElementById('chipMeta');
+const bigSwatch=document.getElementById('bigSwatch');
+const colorName=document.getElementById('colorName');
+const colorSub=document.getElementById('colorSub');
+const hexLabel=document.getElementById('hexLabel');
+const copyHex=document.getElementById('copyHex');
+const exportHistory=document.getElementById('exportHistory');
+const historyList=document.getElementById('historyList');
+const magnifier=document.getElementById('magnifier');
+const magnCanvas=document.getElementById('magnCanvas');
+const fpsLabel=document.getElementById('fps');
+
+let cameraActive=false;
+let continuousDetect=false;
 let history=[];
+let stream;
 
-// Simple demo colors
-const colors=[{name:"Red",r:255,g:0,b:0},{name:"Green",r:0,g:255,b:0},{name:"Blue",r:0,g:0,b:255},{name:"White",r:255,g:255,b:255},{name:"Black",r:0,g:0,b:0},{name:"Yellow",r:255,g:255,b:0},{name:"Cyan",r:0,g:255,b:255},{name:"Magenta",r:255,g:0,b:255}];
+// ========= UTILS =========
+function rgbToHex(r,g,b){return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1).toUpperCase()}
+function closestColor(r,g,b){
+  let minDist=Infinity; let name="Unknown"; let hex="#000";
+  COLORS.forEach(c=>{
+    const dist=Math.sqrt((c[1]-r)**2+(c[2]-g)**2+(c[3]-b)**2);
+    if(dist<minDist){minDist=dist;name=c[0];hex=c[4]}
+  });
+  return{name,hex};
+}
+function addHistory(item){history.unshift(item);if(history.length>10)history.pop();renderHistory();}
+function renderHistory(){historyList.innerHTML="";history.forEach(h=>{
+  const div=document.createElement('div');div.className='history-item';
+  div.innerHTML=`<div class="hist-swatch" style="background:${h.hex}"></div>
+  <div class="hist-meta"><div class="hist-name">${h.name}</div><div class="hist-sub">${h.rgb}</div></div>`;
+  div.onclick=()=>{updateColorUI(h.name,h.rgb,h.hex)};
+  historyList.appendChild(div);
+})}
+function updateColorUI(name,rgb,hex){
+  chipName.textContent=name; chipMeta.textContent=`${rgb} · ${hex}`;
+  bigSwatch.style.background=hex; colorName.textContent=name;
+  colorSub.textContent=`${rgb} · HEX ${hex}`; hexLabel.textContent=hex;
+}
 
-// Utils
-function rgbToHex(r,g,b){return"#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1).toUpperCase();}
-function findClosestColor(r,g,b){let minDist=1e9, nearest=colors[0];colors.forEach(c=>{let d=Math.sqrt((r-c.r)**2+(g-c.g)**2+(b-c.b)**2);if(d<minDist){minDist=d;nearest=c;}});return nearest;}
-function updateDisplay(r,g,b){const hex=rgbToHex(r,g,b);const found=findClosestColor(r,g,b);colorNameEl.textContent=found.name;colorSubEl.textContent=`RGB(${r},${g},${b})`;hexLabel.textContent=hex;bigSwatch.style.background=`rgb(${r},${g},${b})`;pushHistory(found.name,r,g,b,hex);}
-function pushHistory(name,r,g,b,hex){history.unshift({name,r,g,b,hex});if(history.length>12) history.pop();renderHistory();}
-function renderHistory(){historyList.innerHTML='';history.forEach(h=>{let div=document.createElement('div');div.className='history-item';div.innerHTML=`<div class="hist-swatch" style="background:rgb(${h.r},${h.g},${h.b})"></div><div class="hist-meta">${h.name} - ${h.hex}</div>`;div.onclick=()=>updateDisplay(h.r,h.g,h.b);historyList.appendChild(div);});}
+// ========= CAMERA HANDLER =========
+async function startCamera(){
+  if(cameraActive){stopCamera();return;}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    video.srcObject=stream; video.style.display='block';
+    previewImg.style.display='none';
+    cameraActive=true; startStopBtn.textContent="Stop Camera";
+    if(continuousToggle.checked){continuousDetect=true;detectLoop();}
+  }catch(e){alert("Camera not accessible!")}
+}
+function stopCamera(){stream.getTracks().forEach(t=>t.stop());cameraActive=false;video.style.display='none';startStopBtn.textContent="Start Camera";continuousDetect=false}
+startStopBtn.onclick=startCamera;
 
-// Camera
-let stream=null, running=false;
-document.getElementById('startStopBtn').onclick=async()=>{
-  if(!running){
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});video.srcObject=stream;video.style.display="block";previewImg.style.display="none";running=true;document.getElementById('startStopBtn').textContent="Stop Camera";requestAnimationFrame(updateFrame);}catch(e){alert("Camera not accessible")}
-  }else{
-    stream.getTracks().forEach(t=>t.stop());video.style.display="none";running=false;document.getElementById('startStopBtn').textContent="Start Camera";
+// ========= UPLOAD HANDLER =========
+uploadInput.addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(file){
+    const url=URL.createObjectURL(file);
+    previewImg.src=url; previewImg.style.display='block';
+    video.style.display='none';
   }
-}
-function updateFrame(){
-  if(running){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);let x=Math.floor(video.videoWidth/2),y=Math.floor(video.videoHeight/2);let p=ctx.getImageData(x,y,1,1).data;updateDisplay(p[0],p[1],p[2]);requestAnimationFrame(updateFrame);}}
+  modeUpload.checked=true;
+});
 
-document.getElementById('detectNowBtn').onclick=()=>{
-  if(running){let x=Math.floor(video.videoWidth/2),y=Math.floor(video.videoHeight/2);let p=ctx.getImageData(x,y,1,1).data;updateDisplay(p[0],p[1],p[2]);}
+// ========= DETECTION =========
+function getPixelColorFromCanvas(canvas,x,y){
+  const ctx=canvas.getContext('2d');
+  const px=ctx.getImageData(x,y,1,1).data;
+  return px;
+}
+function detectColor(){
+  const canvas=buffer; const ctx=canvas.getContext('2d');
+  let width,height;
+  if(modeCamera.checked && cameraActive){width=video.videoWidth;height=video.videoHeight;canvas.width=width;canvas.height=height;ctx.drawImage(video,0,0,width,height);}
+  else if(modeUpload.checked && previewImg.src){width=previewImg.naturalWidth;height=previewImg.naturalHeight;canvas.width=width;canvas.height=height;ctx.drawImage(previewImg,0,0,width,height);}
+  else{return;}
+  const x=Math.floor(width/2); const y=Math.floor(height/2);
+  const px=getPixelColorFromCanvas(canvas,x,y);
+  const hex=rgbToHex(px[0],px[1],px[2]);
+  const name=closestColor(px[0],px[1],px[2]).name;
+  updateColorUI(name,`RGB(${px[0]},${px[1]},${px[2]})`,hex);
+  chipSwatch.style.background=hex;
+  floatingChip.classList.remove('hidden');
+  addHistory({name:`${name}`,rgb:`RGB(${px[0]},${px[1]},${px[2]})`,hex});
+}
+detectNowBtn.onclick=detectColor;
+
+// ========= CONTINUOUS LOOP =========
+function detectLoop(){
+  if(!continuousDetect) return;
+  detectColor();
+  requestAnimationFrame(detectLoop);
+}
+continuousToggle.addEventListener('change',()=>{continuousDetect=continuousToggle.checked;if(continuousDetect)detectLoop();});
+
+// ========= COPY HEX =========
+copyHex.onclick=()=>{navigator.clipboard.writeText(hexLabel.textContent).then(()=>alert("Copied "+hexLabel.textContent))}
+
+// ========= EXPORT HISTORY =========
+exportHistory.onclick=()=>{
+  const csv="Name,RGB,HEX\n"+history.map(h=>`${h.name},${h.rgb},${h.hex}`).join("\n");
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='color_history.csv';a.click();
 }
 
-document.getElementById('uploadInput').onchange=e=>{
-  let file=e.target.files[0]; if(!file)return;
-  let url=URL.createObjectURL(file);previewImg.src=url;previewImg.style.display="block";video.style.display="none";
-  let img=new Image();img.src=url;img.onload=()=>{canvas.width=img.width;canvas.height=img.height;ctx.drawImage(img,0,0);let x=Math.floor(img.width/2),y=Math.floor(img.height/2);let p=ctx.getImageData(x,y,1,1).data;updateDisplay(p[0],p[1],p[2]);}}
-document.getElementById('copyHex').onclick=()=>{navigator.clipboard.writeText(hexLabel.textContent).then(()=>alert("HEX copied"))}
-document.getElementById('clearHistory').onclick=()=>{history=[];renderHistory();}
+// ========= MAGNIFIER =========
+const magnCtx=magnCanvas.getContext('2d');
+const magnifierSize=140; const magnScale=4;
+document.getElementById('stageBody').addEventListener('mousemove',e=>{
+  const rect=e.currentTarget.getBoundingClientRect();
+  const cx=e.clientX-rect.left; const cy=e.clientY-rect.top;
+  if(modeUpload.checked && previewImg.src){
+    magnifier.style.display='block'; magnifier.style.left=(cx+magnifierSize/2)+'px'; magnifier.style.top=(cy-magnifierSize/2)+'px';
+    magnCanvas.width=magnifierSize; magnCanvas.height=magnifierSize;
+    magnCtx.clearRect(0,0,magnifierSize,magnifierSize);
+    magnCtx.drawImage(previewImg,cx-magnifierSize/2/canvas.width*previewImg.naturalWidth,cy-magnifierSize/2/canvas.height*previewImg.naturalHeight,magnifierSize/magnScale,magnifierSize/magnScale,0,0,magnifierSize,magnifierSize);
+  }else{magnifier.style.display='none'}
+});
 </script>
 </body>
 </html>
