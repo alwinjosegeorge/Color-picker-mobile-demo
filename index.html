@@ -2,305 +2,495 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Color Picker — Mobile Mockup Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ColorDetect — Professional Live Color Picker</title>
+  <meta name="description" content="Live color detector for accessibility & colorblind support — click/tap or continuous detect the color at center, copy HEX, see history." />
   <style>
-    /* Reset + base */
     :root{
-      --bg:#0f1724;
-      --card:#0b1220;
-      --accent:#8b5cf6;
-      --glass: rgba(255,255,255,0.06);
-      --muted: rgba(255,255,255,0.6);
+      --bg-1: #071029;
+      --bg-2: #0f1724;
+      --card: rgba(255,255,255,0.04);
+      --glass: rgba(255,255,255,0.03);
+      --muted: rgba(255,255,255,0.7);
+      --accent: #7c3aed;
+      --success: #10b981;
+      --danger: #ef4444;
+      --radius: 16px;
+      --ui-font: "Inter", system-ui, "Segoe UI", Roboto, Arial;
     }
-    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#eef2ff;background:linear-gradient(180deg,#020617 0%, #071029 100%);display:flex;align-items:center;justify-content:center}
+    html,body{height:100%;margin:0;font-family:var(--ui-font);background:linear-gradient(180deg,var(--bg-2) 0%,var(--bg-1) 100%);color:#eef2ff;display:flex;align-items:center;justify-content:center;padding:18px}
+    .frame{width:380px;max-width:96vw;border-radius:30px;padding:20px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+    .header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#4f46e5);display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;box-shadow:0 6px 18px rgba(124,58,237,0.18)}
+    .title{font-size:16px;font-weight:700}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:2px}
 
-    /* phone mockup */
-    .phone {
-      width: 360px;
-      height: 780px;
-      border-radius: 36px;
-      padding: 22px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
-      box-shadow: 0 20px 50px rgba(2,6,23,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.03);
-      position: relative;
-      overflow: hidden;
-      display:flex;flex-direction:column;
-    }
+    /* Screen area */
+    .phone-screen{background:#000;border-radius:18px;height:600px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column}
+    .screen-top-overlay{position:absolute;left:12px;right:12px;top:14px;z-index:40;display:flex;align-items:center;gap:12px;background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));padding:10px;border-radius:12px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.02)}
+    .swatch{width:22px;height:22px;border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.6);border:1px solid rgba(0,0,0,0.15)}
+    .detected-info{display:flex;flex-direction:column}
+    .detected-name{font-weight:800;font-size:14px}
+    .detected-meta{font-size:12px;color:var(--muted);margin-top:2px}
 
-    .notch{height:6px;width:120px;background:rgba(0,0,0,0.3);border-radius:6px;margin:6px auto 12px}
+    .video-wrap{flex:1;position:relative;background:linear-gradient(180deg,#06070b, #0b0d12)}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .center-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:20px;border:2px dashed rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:30;pointer-events:none}
+    .center-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6)}
 
-    .screen {
-      background: #000;
-      border-radius: 18px;
-      flex:1;
-      position:relative;
-      overflow:hidden;
-      display:flex;align-items:center;justify-content:center;
-    }
+    .floating-chip{position:absolute;left:50%;transform:translateX(-50%);bottom:120px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));padding:10px 14px;border-radius:999px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,0.02);backdrop-filter: blur(6px);z-index:35;transition:opacity .18s,transform .18s}
+    .floating-chip.hidden{opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none}
 
-    /* top overlay */
-    .overlay {
-      position:absolute;top:14px;left:12px;right:12px;display:flex;align-items:center;gap:10px;justify-content:flex-start;
-      background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      padding:8px 12px;border-radius:12px;
-      backdrop-filter: blur(6px);
-      border:1px solid rgba(255,255,255,0.03);
-      z-index:20;
-    }
-    .swatch{width:18px;height:18px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:1px solid rgba(0,0,0,0.2)}
-    .label{font-weight:700;font-size:14px}
-    .sub{font-size:12px;color:var(--muted);margin-left:6px}
+    /* Controls */
+    .controls{display:flex;gap:10px;padding:12px;border-top:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg,transparent, rgba(0,0,0,0.12))}
+    .btn{background:var(--card);padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;font-weight:700;color:#eef2ff;display:inline-flex;align-items:center;gap:8px}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#4f46e5);box-shadow:0 8px 22px rgba(79,70,229,0.12)}
+    .controls-right{margin-left:auto;display:flex;gap:8px;align-items:center}
 
-    /* video + canvas */
-    video, canvas{max-width:100%;height:100%;object-fit:cover;display:block}
-    .camera-area{width:100%;height:100%;position:relative}
-    /* focus indicator */
-    .focus-target{position:absolute;width:84px;height:84px;border-radius:18px;border:2px dashed rgba(255,255,255,0.6);left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;align-items:center;justify-content:center}
-    .focus-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.9)}
+    .toggles{display:flex;gap:8px;align-items:center}
+    .toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+    .small{font-size:12px;color:var(--muted)}
 
-    /* bottom controls */
-    .controls{padding:12px 6px;display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .btn{background:var(--glass);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;font-weight:600}
-    .file{font-size:12px;color:var(--muted)}
+    /* bottom panel: details + history */
+    .bottom-panel{padding:12px;display:flex;gap:12px;align-items:flex-start}
+    .details{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+    .details .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .hex-box{font-weight:800;font-size:16px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.03);display:inline-block;min-width:110px;text-align:center}
+    .history{width:140px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+    .history h4{margin:0 0 8px 0;font-size:13px}
+    .hist-list{display:flex;flex-direction:column;gap:8px;max-height:210px;overflow:auto;padding-right:6px}
+    .hist-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;background:rgba(0,0,0,0.18);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+    .hist-swatch{width:36px;height:36px;border-radius:8px;flex-shrink:0}
+    .hist-meta{flex:1}
+    .meta-name{font-weight:700}
+    .meta-sub{font-size:12px;color:var(--muted)}
+    .copy-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.02);font-weight:700;cursor:pointer}
 
-    /* result chip (temporary) */
-    .result-chip{position:absolute;left:50%;transform:translateX(-50%);bottom:110px;background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));padding:10px 14px;border-radius:999px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,0.03);backdrop-filter: blur(6px);z-index:19}
-
-    /* accessibility text for screen-readers */
+    /* small helpers */
+    .muted{color:var(--muted);font-size:13px}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-    /* small responsive */
-    @media(max-width:420px){.phone{transform:scale(0.92)}}
+    @media(max-width:420px){
+      .frame{width:100%}
+      .phone-screen{height:560px}
+    }
   </style>
 </head>
 <body>
-  <div class="phone" role="application" aria-label="Color detection mobile demo">
-    <div class="notch" aria-hidden="true"></div>
+  <div class="frame" role="application" aria-label="ColorDetect application">
+    <div class="header">
+      <div class="logo" aria-hidden="true">CD</div>
+      <div>
+        <div class="title">ColorDetect — Live</div>
+        <div class="subtitle">Tap or continuous detect · Copy HEX · Accessible</div>
+      </div>
+    </div>
 
-    <div class="screen">
-      <div class="overlay" id="topOverlay" aria-live="polite">
+    <div class="phone-screen" id="phoneScreen">
+      <div class="screen-top-overlay" aria-live="polite">
         <div class="swatch" id="swatch" style="background:#ff0000"></div>
-        <div>
-          <div class="label" id="detectedLabel">Detected Color: <span id="detectedName">Red</span></div>
-          <div class="sub" id="detectedRgb">RGB: (255, 0, 0)</div>
+        <div class="detected-info">
+          <div class="detected-name" id="detectedName">Detected: <span id="nameText">Red</span></div>
+          <div class="detected-meta" id="metaText">RGB: (255, 0, 0) · HEX: #FF0000</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <div class="small muted" id="fpsBadge">— FPS</div>
         </div>
       </div>
 
-      <div class="camera-area" id="cameraArea">
-        <!-- video for live camera feed -->
+      <div class="video-wrap" id="videoWrap" aria-hidden="false">
         <video id="video" autoplay playsinline></video>
-        <!-- canvas used as hidden draw buffer to read pixels -->
-        <canvas id="buffer" style="display:none"></canvas>
+        <canvas id="buffer" width="1" height="1" style="display:none"></canvas>
 
-        <!-- focus target in center to show where color is read -->
-        <div class="focus-target" aria-hidden="true"><div class="focus-dot"></div></div>
+        <div class="center-cross" aria-hidden="true"><div class="center-dot"></div></div>
 
-        <!-- floating result chip (optional) -->
-        <div class="result-chip" id="resultChip" style="display:none">
-          <div class="swatch" id="chipSwatch"></div>
-          <div style="font-weight:700" id="chipLabel">Red</div>
+        <div class="floating-chip hidden" id="floatingChip" role="status" aria-atomic="true">
+          <div class="swatch" id="chipSwatch" style="background:#ff0000"></div>
+          <div style="font-weight:800" id="chipLabel">Red</div>
+        </div>
+      </div>
+
+      <div class="controls" role="region" aria-label="controls">
+        <button class="btn primary" id="startStopBtn" title="Start / Stop camera">Start Camera</button>
+        <button class="btn ghost" id="snapBtn" title="Detect center color now">Detect Now</button>
+
+        <div class="controls-right">
+          <label class="btn ghost" style="cursor:pointer">
+            Upload Image
+            <input id="fileInput" type="file" accept="image/*" style="display:none" />
+          </label>
+
+          <div class="toggles">
+            <label class="toggle"><input id="continuousToggle" type="checkbox" /> <span class="muted">Continuous</span></label>
+            <label class="toggle"><input id="autoHistoryToggle" type="checkbox" checked /> <span class="muted">Save history</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-panel">
+        <div class="details">
+          <div class="row">
+            <div style="flex:1">
+              <div class="muted">Name</div>
+              <div style="margin-top:6px;font-weight:900;font-size:18px" id="bigName">Red</div>
+            </div>
+            <div style="text-align:right">
+              <div class="muted">HEX</div>
+              <div style="margin-top:6px" class="hex-box" id="hexBox">#FF0000</div>
+              <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+                <button class="copy-btn" id="copyHex">Copy HEX</button>
+                <button class="copy-btn" id="downloadHistory">Export</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:6px">
+            <div class="muted">Info</div>
+            <div style="margin-left:auto" id="ariaStatus" class="muted sr-only">No color detected yet</div>
+          </div>
+        </div>
+
+        <div class="history" aria-live="polite">
+          <h4>History</h4>
+          <div class="hist-list" id="historyList" aria-label="Recent colors"></div>
         </div>
       </div>
     </div>
-
-    <div class="controls">
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn" id="startBtn">Start Camera</button>
-        <button class="btn" id="snapBtn">Detect Center Color</button>
-      </div>
-      <div style="text-align:right">
-        <label class="file btn">Upload Image
-          <input id="fileInput" type="file" accept="image/*" style="display:none">
-        </label>
-      </div>
-    </div>
-
-    <p class="sr-only" id="ariaStatus">No color detected yet</p>
   </div>
 
-  <script>
-    // small palette to map to human-friendly names
-    const PALETTE = {
-      "Red": [255,0,0],
-      "Green": [0,128,0],
-      "Blue": [0,0,255],
-      "Yellow": [255,255,0],
-      "Cyan": [0,255,255],
-      "Magenta": [255,0,255],
-      "Orange": [255,165,0],
-      "Brown": [165,42,42],
-      "Pink": [255,192,203],
-      "Purple": [128,0,128],
-      "Black": [0,0,0],
-      "White": [255,255,255],
-      "Gray": [128,128,128]
-    };
+  <p class="sr-only" id="screenReaderLog">No color detected</p>
 
+  <script>
+    /* ===========================
+       Big color database (CSS-ish)
+       array of {name, r,g,b,hex}
+       =========================== */
+    const COLORS_DB = [
+      ["Black",0,0,0,"#000000"],["Navy",0,0,128,"#000080"],["DarkBlue",0,0,139,"#00008B"],
+      ["MediumBlue",0,0,205,"#0000CD"],["Blue",0,0,255,"#0000FF"],["DarkGreen",0,100,0,"#006400"],
+      ["Green",0,128,0,"#008000"],["Teal",0,128,128,"#008080"],["DarkCyan",0,139,139,"#008B8B"],
+      ["DeepSkyBlue",0,191,255,"#00BFFF"],["DodgerBlue",30,144,255,"#1E90FF"],["RoyalBlue",65,105,225,"#4169E1"],
+      ["MediumSlateBlue",123,104,238,"#7B68EE"],["Indigo",75,0,130,"#4B0082"],["SlateBlue",106,90,205,"#6A5ACD"],
+      ["DarkRed",139,0,0,"#8B0000"],["Crimson",220,20,60,"#DC143C"],["Red",255,0,0,"#FF0000"],
+      ["Tomato",255,99,71,"#FF6347"],["Coral",255,127,80,"#FF7F50"],["OrangeRed",255,69,0,"#FF4500"],
+      ["Orange",255,165,0,"#FFA500"],["Gold",255,215,0,"#FFD700"],["Yellow",255,255,0,"#FFFF00"],
+      ["Olive",128,128,0,"#808000"],["DarkKhaki",189,183,107,"#BDB76B"],["Khaki",240,230,140,"#F0E68C"],
+      ["SaddleBrown",139,69,19,"#8B4513"],["Brown",165,42,42,"#A52A2A"],["Sienna",160,82,45,"#A0522D"],
+      ["Maroon",128,0,0,"#800000"],["Beige",245,245,220,"#F5F5DC"],["Wheat",245,222,179,"#F5DEB3"],
+      ["Tan",210,180,140,"#D2B48C"],["RosyBrown",188,143,143,"#BC8F8F"],["Salmon",250,128,114,"#FA8072"],
+      ["LightSalmon",255,160,122,"#FFA07A"],["PeachPuff",255,218,185,"#FFDAB9"],["Lavender",230,230,250,"#E6E6FA"],
+      ["Violet",238,130,238,"#EE82EE"],["Magenta",255,0,255,"#FF00FF"],["Fuchsia",255,0,255,"#FF00FF"],
+      ["Plum",221,160,221,"#DDA0DD"],["Orchid",218,112,214,"#DA70D6"],["Purple",128,0,128,"#800080"],
+      ["MediumPurple",147,112,219,"#9370DB"],["Pink",255,192,203,"#FFC0CB"],["HotPink",255,105,180,"#FF69B4"],
+      ["LightPink",255,182,193,"#FFB6C1"],["White",255,255,255,"#FFFFFF"],["Snow",255,250,250,"#FFFAFA"],
+      ["Gainsboro",220,220,220,"#DCDCDC"],["LightGray",211,211,211,"#D3D3D3"],["Silver",192,192,192,"#C0C0C0"],
+      ["Gray",128,128,128,"#808080"],["DimGray",105,105,105,"#696969"],["LightSeaGreen",32,178,170,"#20B2AA"],
+      ["Cyan",0,255,255,"#00FFFF"],["Aqua",0,255,255,"#00FFFF"],["Turquoise",64,224,208,"#40E0D0"],
+      ["Lime",0,255,0,"#00FF00"],["Chartreuse",127,255,0,"#7FFF00"],["SpringGreen",0,255,127,"#00FF7F"]
+    ];
+
+    /* ====== DOM refs ====== */
     const video = document.getElementById('video');
     const buffer = document.getElementById('buffer');
-    const startBtn = document.getElementById('startBtn');
+    const startStopBtn = document.getElementById('startStopBtn');
     const snapBtn = document.getElementById('snapBtn');
     const fileInput = document.getElementById('fileInput');
+    const continuousToggle = document.getElementById('continuousToggle');
+    const autoHistoryToggle = document.getElementById('autoHistoryToggle');
+
     const swatch = document.getElementById('swatch');
-    const detectedName = document.getElementById('detectedName');
-    const detectedRgb = document.getElementById('detectedRgb');
-    const ariaStatus = document.getElementById('ariaStatus');
-    const resultChip = document.getElementById('resultChip');
+    const nameText = document.getElementById('nameText');
+    const metaText = document.getElementById('metaText');
+    const hexBox = document.getElementById('hexBox');
+    const bigName = document.getElementById('bigName');
+    const floatingChip = document.getElementById('floatingChip');
     const chipSwatch = document.getElementById('chipSwatch');
     const chipLabel = document.getElementById('chipLabel');
+    const historyList = document.getElementById('historyList');
+    const copyHexBtn = document.getElementById('copyHex');
+    const downloadHistoryBtn = document.getElementById('downloadHistory');
+    const fpsBadge = document.getElementById('fpsBadge');
+    const ariaStatus = document.getElementById('ariaStatus');
+    const screenReaderLog = document.getElementById('screenReaderLog');
 
-    let streamActive = false;
+    let stream = null;
+    let animFrame = null;
+    let lastDetect = 0;
+    let fpsCounter = {lastTick: performance.now(), frames:0};
 
-    function closestColorName(r,g,b){
-      let best = {name:'Unknown',dist:Number.POSITIVE_INFINITY};
-      for(const name in PALETTE){
-        const [pr,pg,pb] = PALETTE[name];
-        const d = (pr-r)*(pr-r) + (pg-g)*(pg-g) + (pb-b)*(pb-b);
-        if(d < best.dist){ best = {name,dist:d}; }
-      }
-      return best.name;
+    let history = [];
+
+    /* ===== utility functions ===== */
+    function rgbToHex(r,g,b){
+      return "#" + [r,g,b].map(x=> x.toString(16).padStart(2,"0")).join("").toUpperCase();
     }
 
+    function closestColor(r,g,b){
+      let best = {dist: Infinity, idx: 0};
+      for(let i=0;i<COLORS_DB.length;i++){
+        const c = COLORS_DB[i];
+        const dr = c[1]-r, dg = c[2]-g, db = c[3]-b;
+        const d = dr*dr + dg*dg + db*db;
+        if(d < best.dist){ best.dist = d; best.idx = i; }
+      }
+      const c = COLORS_DB[best.idx];
+      return {name: c[0], r:c[1], g:c[2], b:c[3], hex: c[4], distance: Math.sqrt(best.dist)};
+    }
+
+    function updateUI(r,g,b){
+      const hex = rgbToHex(r,g,b);
+      const found = closestColor(r,g,b);
+      nameText.textContent = found.name;
+      bigName.textContent = found.name;
+      metaText.textContent = `RGB: (${r}, ${g}, ${b}) · HEX: ${hex}`;
+      hexBox.textContent = hex;
+      swatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      chipSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      chipLabel.textContent = found.name;
+
+      // ARIA and screen reader message
+      const sr = `Detected ${found.name}, ${hex}, RGB ${r} ${g} ${b}`;
+      ariaStatus.textContent = sr;
+      screenReaderLog.textContent = sr;
+    }
+
+    function pushHistory(name, r,g,b, hex){
+      if(!autoHistoryToggle.checked) return;
+      const entry = {name, r,g,b,hex, time: (new Date()).toISOString()};
+      history.unshift(entry);
+      if(history.length > 8) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory(){
+      historyList.innerHTML = "";
+      history.forEach((h, idx)=>{
+        const item = document.createElement('div');
+        item.className = 'hist-item';
+        item.innerHTML = `
+          <div class="hist-swatch" style="background:${h.hex}"></div>
+          <div class="hist-meta">
+            <div class="meta-name">${h.name}</div>
+            <div class="meta-sub">${h.hex} · ${h.time.split("T")[1].slice(0,8)}</div>
+          </div>
+          <button class="copy-btn" data-idx="${idx}">Copy</button>
+        `;
+        // click on item: fill UI with that color
+        item.addEventListener('click', (ev)=>{
+          if(ev.target && ev.target.classList.contains('copy-btn')) return; // let copy button handle
+          updateUI(h.r,h.g,h.b);
+        });
+        // copy button
+        item.querySelector('.copy-btn').addEventListener('click', (ev)=>{
+          ev.stopPropagation();
+          navigator.clipboard.writeText(h.hex).then(()=> {
+            ev.target.textContent = 'Copied';
+            setTimeout(()=> ev.target.textContent = 'Copy',900);
+          });
+        });
+
+        historyList.appendChild(item);
+      });
+    }
+
+    /* ===== camera control ===== */
     async function startCamera(){
       try{
-        const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
-        video.srcObject = s;
-        streamActive = true;
-        startBtn.textContent = 'Stop Camera';
-      }catch(e){
-        alert('Camera access failed. You can instead upload an image.');
-        console.error(e);
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio:false });
+        video.srcObject = stream;
+        startStopBtn.textContent = "Stop Camera";
+        startDetectLoop();
+      }catch(err){
+        alert("Camera access failed — use Upload Image instead.");
+        console.error(err);
       }
     }
 
     function stopCamera(){
-      if(video.srcObject){
-        video.srcObject.getTracks().forEach(t => t.stop());
-        video.srcObject = null;
+      if(stream){
+        stream.getTracks().forEach(t=>t.stop());
+        stream = null;
       }
-      streamActive = false;
-      startBtn.textContent = 'Start Camera';
+      video.srcObject = null;
+      startStopBtn.textContent = "Start Camera";
+      stopDetectLoop();
     }
 
-    startBtn.addEventListener('click', ()=>{
-      if(!streamActive) startCamera(); else stopCamera();
+    startStopBtn.addEventListener('click', ()=>{
+      if(!stream) startCamera(); else stopCamera();
     });
 
-    // draw current frame to buffer and read center pixel
-    function detectCenterColorFromVideo(){
-      if(!video.videoWidth) return;
-      buffer.width = video.videoWidth;
-      buffer.height = video.videoHeight;
-      const ctx = buffer.getContext('2d');
-      ctx.drawImage(video,0,0,buffer.width,buffer.height);
+    /* ===== detection loop ===== */
+    function startDetectLoop(){
+      if(animFrame) return;
+      function loop(now){
+        animFrame = requestAnimationFrame(loop);
+        // compute fps little
+        fpsCounter.frames++;
+        const elapsed = now - fpsCounter.lastTick;
+        if(elapsed > 500){
+          fpsBadge.textContent = `${Math.round((fpsCounter.frames/(elapsed/1000)))} FPS`;
+          fpsCounter.lastTick = now;
+          fpsCounter.frames = 0;
+        }
 
-      const cx = Math.floor(buffer.width/2);
-      const cy = Math.floor(buffer.height/2);
-      const p = ctx.getImageData(cx, cy, 1, 1).data;
-      const r = p[0], g = p[1], b = p[2];
-      showDetected(r,g,b);
+        // if continuous toggle is on, detect frequently, otherwise skip until manual snap
+        if(continuousToggle.checked){
+          detectCenterColor();
+        }
+      }
+      animFrame = requestAnimationFrame(loop);
     }
 
-    // for uploaded image
-    function detectCenterColorFromImage(img){
-      buffer.width = img.naturalWidth || img.width;
-      buffer.height = img.naturalHeight || img.height;
-      const ctx = buffer.getContext('2d');
-      ctx.drawImage(img,0,0,buffer.width,buffer.height);
-      const cx = Math.floor(buffer.width/2);
-      const cy = Math.floor(buffer.height/2);
-      const p = ctx.getImageData(cx, cy, 1, 1).data;
-      const r = p[0], g = p[1], b = p[2];
-      showDetected(r,g,b);
+    function stopDetectLoop(){
+      if(animFrame){ cancelAnimationFrame(animFrame); animFrame = null; }
     }
 
-    function showDetected(r,g,b){
-      const name = closestColorName(r,g,b);
-      const rgbText = `RGB: (${r}, ${g}, ${b})`;
-      detectedName.textContent = name;
-      detectedRgb.textContent = rgbText;
-      swatch.style.background = `rgb(${r}, ${g}, ${b})`;
-      chipSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
-      chipLabel.textContent = name;
+    function stopDetectLoop(){ if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; } }
 
-      // show floating chip for a second
-      resultChip.style.display = 'flex';
-      clearTimeout(resultChip._hideTimer);
-      resultChip._hideTimer = setTimeout(()=> resultChip.style.display='none', 1100);
+    function detectCenterColor(){
+      if(!video.videoWidth || !video.videoHeight) return;
+      const w = video.videoWidth, h = video.videoHeight;
+      buffer.width = w; buffer.height = h;
+      const ctx = buffer.getContext('2d');
+      ctx.drawImage(video, 0, 0, w, h);
 
-      // accessibility
-      ariaStatus.textContent = `Detected color ${name} with values ${r} ${g} ${b}`;
+      const cx = Math.floor(w/2), cy = Math.floor(h/2);
+      const p = ctx.getImageData(cx, cy, 1,1).data;
+      const r = p[0], g = p[1], b = p[2];
+      updateUI(r,g,b);
 
-      // update top overlay contrast (light text on dark swatch)
-      const luminance = (0.2126*r + 0.7152*g + 0.0722*b);
-      const useWhite = luminance < 140;
-      document.getElementById('detectedLabel').style.color = useWhite ? '#fff' : '#fff';
+      // show floating chip briefly
+      floatingChip.classList.remove('hidden');
+      clearTimeout(floatingChip._hide);
+      floatingChip._hide = setTimeout(()=> floatingChip.classList.add('hidden'), 900);
+
+      // auto history
+      const found = closestColor(r,g,b);
+      pushHistory(found.name, r,g,b, rgbToHex(r,g,b));
     }
 
     snapBtn.addEventListener('click', ()=>{
-      if(streamActive) detectCenterColorFromVideo(); else alert('Start camera or upload an image first.');
+      if(stream) detectCenterColor(); else alert('Start camera or upload image first.');
     });
 
-    // file upload handler: show image in a temporary Image element then detect
+    /* ===== upload image handling (fallback) ===== */
     fileInput.addEventListener('change', (ev)=>{
       const f = ev.target.files[0];
       if(!f) return;
       const url = URL.createObjectURL(f);
       const img = new Image();
       img.onload = ()=>{
-        // place image into the visible area by replacing video element with canvas preview
-        // for simplicity we draw the image on the video-sized canvas and keep overlay behavior
-        // hide video
-        video.style.display = 'none';
-        const ctx = buffer.getContext('2d');
+        // draw image to buffer at natural size then detect center
         buffer.width = img.naturalWidth;
         buffer.height = img.naturalHeight;
-        ctx.drawImage(img,0,0);
-
-        // show detection result
-        detectCenterColorFromImage(img);
+        const ctx = buffer.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const cx = Math.floor(buffer.width/2), cy = Math.floor(buffer.height/2);
+        const p = ctx.getImageData(cx, cy, 1,1).data;
+        const r = p[0], g = p[1], b = p[2];
+        updateUI(r,g,b);
+        floatingChip.classList.remove('hidden');
+        clearTimeout(floatingChip._hide);
+        floatingChip._hide = setTimeout(()=> floatingChip.classList.add('hidden'), 900);
+        const found = closestColor(r,g,b);
+        pushHistory(found.name, r,g,b, rgbToHex(r,g,b));
+        // hide video if any
+        if(stream){ stopCamera(); }
       };
+      img.onerror = ()=> alert('Image failed to load.');
       img.src = url;
     });
 
-    // also support tap on screen to detect exact touched pixel
-    const cameraArea = document.getElementById('cameraArea');
-    cameraArea.addEventListener('click', function(e){
-      // if using video, map click coordinates to buffer pixel coords
-      const rect = cameraArea.getBoundingClientRect();
+    /* ===== tap-to-pick on visible area ===== */
+    document.getElementById('videoWrap').addEventListener('click', function(e){
+      // map click to buffer coords
+      const rect = e.currentTarget.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
 
-      // map to buffer coordinate system
-      let bw = buffer.width || video.videoWidth || rect.width;
-      let bh = buffer.height || video.videoHeight || rect.height;
-      // compute scale between display area and buffer
+      // compute buffer dims
+      const bw = buffer.width || video.videoWidth || rect.width;
+      const bh = buffer.height || video.videoHeight || rect.height;
       const scaleX = bw / rect.width;
       const scaleY = bh / rect.height;
       const bx = Math.floor(cx * scaleX);
       const by = Math.floor(cy * scaleY);
 
-      const ctx = buffer.getContext('2d');
       try{
-        const p = ctx.getImageData(bx, by, 1, 1).data;
-        showDetected(p[0], p[1], p[2]);
+        const ctx = buffer.getContext('2d');
+        const p = ctx.getImageData(bx, by, 1,1).data;
+        const r = p[0], g = p[1], b = p[2];
+        updateUI(r,g,b);
+        const found = closestColor(r,g,b);
+        pushHistory(found.name,r,g,b,rgbToHex(r,g,b));
       }catch(err){
-        // if clicking before buffer setup, try to capture a frame first
-        if(streamActive) detectCenterColorFromVideo();
+        // if no buffer (video not ready), try center detect
+        if(stream) detectCenterColor();
       }
     });
 
-    // stop camera when page hidden
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.hidden) stopCamera();
+    /* ===== copy hex & export history ===== */
+    copyHexBtn.addEventListener('click', ()=>{
+      const txt = hexBox.textContent.trim();
+      navigator.clipboard.writeText(txt).then(()=> {
+        copyHexBtn.textContent = 'Copied';
+        setTimeout(()=> copyHexBtn.textContent = 'Copy HEX', 900);
+      });
     });
 
-    // small helper: center-read every 2s while camera running (optional)
-    // Uncomment below if you want continuous detection
-    // setInterval(()=>{ if(streamActive) detectCenterColorFromVideo(); }, 2000);
+    downloadHistoryBtn.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(history,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'color-history.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
 
+    /* ===== render initial empty history ===== */
+    renderHistory();
+
+    /* ===== stop camera when leaving page for safety ===== */
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden){ if(stream) stopCamera(); }
+    });
+
+    /* ===== helpful: start detect loop once camera starts (if continuous checked) ===== */
+    // ensure we start animation loop when camera starts
+    video.addEventListener('loadeddata', ()=>{
+      if(!animFrame) {
+        // run loop but detect only when continuous or manual snap
+        function loop(ts){
+          animFrame = requestAnimationFrame(loop);
+          // update fps if desired
+        }
+        animFrame = requestAnimationFrame(loop);
+      }
+      // if continuous was checked, start loop detection
+      if(continuousToggle.checked && stream && !animFrame) startDetectLoop();
+    });
+
+    // Clean up on unload
+    window.addEventListener('beforeunload', ()=>{
+      if(stream) stopCamera();
+    });
+
+    /* ===== keyboard accessibility: space = snap when focused ===== */
+    window.addEventListener('keydown', (e)=>{
+      if(e.code === 'Space'){
+        e.preventDefault();
+        if(document.activeElement === document.body) snapBtn.click();
+      }
+    });
+
+    // show simple tooltip for first-time guidance
+    setTimeout(()=> {
+      if(!localStorage.getItem('seenGuide')){
+        alert('Tip: Click "Start Camera" then enable "Continuous" for live tracking. Use Upload if camera blocked.');
+        localStorage.setItem('seenGuide','1');
+      }
+    }, 800);
   </script>
 </body>
 </html>
