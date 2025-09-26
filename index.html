@@ -221,7 +221,7 @@
     <div class="footer-note" style="margin-top:10px">Made with ❤️ — TrueShade Pro</div>
   </div>
   <div aria-live="polite" id="srLive" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;"></div>
-  <!-- JavaScript unchanged: your original logic, which is already feature-rich, is preserved. -->
+  <!-- JavaScript unchanged except for continuous detection delay now 2s -->
   <script>
     // ---------- Full CSS Colors (approx 140) ----------
     const CSS_COLORS = {
@@ -328,6 +328,7 @@
     const stageBody = document.getElementById('stageBody');
     const lockPointBtn = document.getElementById('lockPointBtn');
     let stream = null, anim = null;
+    let continuousTimer = null;  // NEW: for interval detection
     let fpsCounter = {frames:0, lastTime: performance.now()};
     let history = [];
     const bufferCtx = buffer.getContext('2d');
@@ -423,10 +424,12 @@
       video.style.display = 'none';
       startStopBtn.textContent = 'Start Camera';
       cancelAnimationFrame(anim); anim = null;
+      clearInterval(continuousTimer); continuousTimer = null;
       fpsEl.textContent = '— FPS';
     }
     startStopBtn.addEventListener('click', ()=>{ if(!stream) startCamera(); else stopCamera(); });
-    // detection loop
+
+    // detection loop with 2s interval for continuous mode
     function setupDetectLoop(){
       if(anim) return;
       const loop = (t)=>{
@@ -438,12 +441,32 @@
           fpsEl.textContent = `${fps} FPS`;
           fpsCounter.lastTime = t; fpsCounter.frames = 0;
         }
-        if(continuousToggle.checked){
-          detectPoint();
-        }
       };
       anim = requestAnimationFrame(loop);
+
+      // Only one interval at a time!
+      if(continuousTimer) clearInterval(continuousTimer);
+      // If checked, start 2s interval detection
+      if(continuousToggle.checked){
+        continuousTimer = setInterval(()=>{
+          if(!continuousToggle.checked) return;
+          detectPoint();
+        }, 2000);
+      }
     }
+
+    // Watch for toggle changes (start/stop interval)
+    continuousToggle.addEventListener('change', ()=>{
+      if(continuousTimer) { clearInterval(continuousTimer); continuousTimer = null; }
+      if(continuousToggle.checked) {
+        detectPoint();
+        continuousTimer = setInterval(()=>{
+          if(!continuousToggle.checked) return;
+          detectPoint();
+        }, 2000);
+      }
+    });
+
     function detectPoint(){
       const bufW = buffer.width || (video.videoWidth || stageBody.clientWidth);
       const bufH = buffer.height || (video.videoHeight || stageBody.clientHeight);
@@ -631,7 +654,7 @@
     });
     window.addEventListener('keydown', (e)=>{
       if(e.key === ' '){ e.preventDefault(); detectPoint(); }
-      if(e.key === 'c'){ continuousToggle.checked = !continuousToggle.checked; }
+      if(e.key === 'c'){ continuousToggle.checked = !continuousToggle.checked; continuousToggle.dispatchEvent(new Event('change')); }
       if(e.key === 'l'){ lockEnabled = !lockEnabled; lockPointBtn.textContent = `Lock Point: ${lockEnabled? 'On' : 'Off'}`; }
     });
     loadHistory();
