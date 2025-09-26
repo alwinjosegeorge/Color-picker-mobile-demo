@@ -5,123 +5,181 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TrueShade Pro — Color Detector</title>
   <meta name="description" content="Professional color detection — live camera + upload, lock point, continuous tracking, magnifier, persistent history, export CSV/JSON."/>
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,700,900&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg1:#071029; --bg2:#0f1724;
-      --glass: rgba(255,255,255,0.03);
-      --muted: rgba(255,255,255,0.75);
+      --glass: rgba(255,255,255,0.05);
+      --muted: rgba(255,255,255,0.74);
       --accent1:#7c3aed;
       --accent2:#4f46e5;
       --success:#10b981;
       --danger:#ef4444;
       --radius:14px;
-      --ui-font: Inter, system-ui, "Segoe UI", Roboto, Arial;
+      --ui-font: 'Inter', system-ui, "Segoe UI", Arial;
+      --card-bg: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
     }
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:var(--ui-font);background:linear-gradient(180deg,var(--bg2),var(--bg1));color:#eef2ff;display:flex;align-items:center;justify-content:center;padding:18px}
-    .app{width:1000px;max-width:98vw;border-radius:18px;padding:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));box-shadow:0 18px 50px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.02)}
-    .top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-    .logo{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:white}
-    .title{font-size:18px;font-weight:800}
-    .subtitle{font-size:12px;color:var(--muted)}
-
-    .main{display:grid;grid-template-columns:1fr 360px;gap:14px}
-    .stage{background:#000;border-radius:14px;min-height:620px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
-    .controls-bar{display:flex;gap:8px;align-items:center;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-bottom:1px solid rgba(255,255,255,0.02)}
-    .btn{padding:10px 12px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.02);color:#eef2ff;font-weight:700;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
-    .btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));box-shadow:0 8px 24px rgba(79,70,229,0.12)}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
-    .btn.success{background:linear-gradient(90deg,var(--success),#059669)}
-    .btn.danger{background:linear-gradient(90deg,var(--danger),#b91c1c)}
-    .mode-switch{margin-left:auto;display:flex;gap:6px;align-items:center}
-    .toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-    input[type=file]{display:none}
-
-    .stage-body{position:relative;height:520px;display:flex;align-items:center;justify-content:center}
-    video, .preview-img, canvas{max-width:100%;width:100%;height:100%;object-fit:cover;display:block}
-    .preview-img{display:block;width:100%;height:100%;object-fit:contain;background:#0b0b0b}
-    .center-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:18px;border:2px dashed rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:25;pointer-events:none}
-    .center-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.6)}
-    .floating-chip{position:absolute;left:50%;transform:translateX(-50%);bottom:78px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));padding:10px 14px;border-radius:999px;display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,0.02);backdrop-filter: blur(6px);z-index:30;transition:opacity .15s,transform .15s}
-    .floating-chip.hidden{opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none}
-    .swatch{width:28px;height:28px;border-radius:8px;border:1px solid rgba(0,0,0,0.2);box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-    .fps{font-size:12px;color:var(--muted);margin-left:8px}
-
-    .magnifier{
-      position:absolute;width:120px;height:120px;border-radius:12px;border:2px solid rgba(255,255,255,0.06);overflow:hidden;z-index:40;display:none;background:#000;
-      box-shadow:0 8px 30px rgba(2,6,23,0.6);
+    html,body{height:100%;margin:0;font-family:var(--ui-font);background:linear-gradient(180deg,var(--bg2),var(--bg1));color:#eef2ff;}
+    body {min-height:100vh;display:flex;align-items:center;justify-content:center;padding:0;}
+    .app{
+      width:980px;max-width:99vw;border-radius:18px;padding:0 0 14px 0;
+      background:var(--card-bg);box-shadow:0 18px 50px rgba(2,6,23,0.75);border:1px solid rgba(255,255,255,0.025);
+      margin:22px 0;
+      transition: box-shadow .25s;
     }
-    .magnifier canvas{width:100%;height:100%;display:block;transform-origin:center}
-
-    .panel{padding:12px;display:flex;flex-direction:column;gap:12px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
-    .big-color{display:flex;gap:12px;align-items:center}
-    .big-swatch{width:72px;height:72px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
-    .big-meta{flex:1}
-    .color-name{font-weight:900;font-size:18px}
-    .color-sub{font-size:13px;color:var(--muted);margin-top:6px}
-    .meta-row{display:flex;gap:8px;align-items:center;margin-top:10px}
-    .hex{font-weight:900;background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:8px}
-    .copy-small{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
-
-    .history-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto;padding-right:6px}
-    .history-item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;background:rgba(0,0,0,0.16);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
-    .hist-swatch{width:48px;height:48px;border-radius:8px;flex-shrink:0}
-    .hist-meta{flex:1}
-    .hist-name{font-weight:800}
-    .hist-sub{font-size:12px;color:var(--muted)}
-
-    .footer-note{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
-
-    @media(max-width:920px){
-      .main{grid-template-columns:1fr;gap:12px}
-      .stage{order:2}
-      .panel{order:1}
-      .floating-chip{bottom:auto;top:18px;left:50%;transform:translateX(-50%);width:calc(100% - 48px);justify-content:flex-start}
+    .navbar{
+      display:flex;align-items:center;gap:14px;border-radius:16px 16px 0 0;padding:14px 20px 12px 24px;
+      background:linear-gradient(90deg,#0f1724 80%,rgba(124,58,237,0.15));
+      box-shadow:0 2px 12px 0 rgba(124,58,237,0.05);
+      border-bottom:1.5px solid rgba(124,58,237,0.09);
+    }
+    .logo{
+      width:46px;height:46px;border-radius:10px;
+      background:linear-gradient(135deg,var(--accent1),var(--accent2));
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:24px;color:white;
+      box-shadow:0 2px 8px rgba(79,70,229,0.13);
+      letter-spacing:2px;
+    }
+    .nav-title{font-size:1.4rem;font-weight:900;letter-spacing:1.5px;}
+    .nav-desc{font-size:13px;color:var(--muted);}
+    .main{display:grid;grid-template-columns:1fr 340px;gap:18px;padding:14px 20px;}
+    .stage{background:#000;border-radius:16px;min-height:410px;position:relative;overflow:hidden;
+      border:1.5px solid rgba(255,255,255,0.04);}
+    .controls-bar{
+      display:flex;gap:9px;align-items:center;padding:12px 10px;
+      background:linear-gradient(180deg, rgba(124,58,237,0.04) 0, transparent 80%);
+      border-bottom:1.5px solid rgba(255,255,255,0.05);
+      font-size:15px;
+    }
+    .btn{
+      padding:10px 15px;border-radius:10px;background:var(--glass);
+      border:1px solid rgba(255,255,255,0.05);color:#eef2ff;font-weight:700;cursor:pointer;
+      display:inline-flex;gap:8px;align-items:center;
+      font-size:15px;transition:box-shadow .13s,background .17s;
+    }
+    .btn:active{background:rgba(79,70,229,0.13);}
+    .btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));box-shadow:0 8px 24px rgba(79,70,229,0.12);}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);}
+    .btn.success{background:linear-gradient(90deg,var(--success),#059669);}
+    .btn.danger{background:linear-gradient(90deg,var(--danger),#b91c1c);}
+    .btn[disabled]{opacity:0.55;pointer-events:none;}
+    input[type=file]{display:none}
+    .mode-switch{margin-left:auto;display:flex;gap:8px;align-items:center;}
+    .toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);}
+    .stage-body{position:relative;height:378px;display:flex;align-items:center;justify-content:center;}
+    video,.preview-img,canvas{max-width:100%;width:100%;height:100%;object-fit:cover;display:block;}
+    .preview-img{display:block;width:100%;height:100%;object-fit:contain;background:#0b0b0b;}
+    .center-cross{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:76px;height:76px;border-radius:17px;border:2px dashed rgba(255,255,255,0.60);
+      display:flex;align-items:center;justify-content:center;z-index:25;pointer-events:none
+    }
+    .center-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.97);box-shadow:0 2px 8px rgba(0,0,0,0.6);}
+    .floating-chip{
+      position:absolute;left:50%;transform:translateX(-50%);
+      bottom:78px;background:var(--glass);
+      padding:10px 16px;border-radius:999px;display:flex;align-items:center;gap:12px;
+      border:1px solid rgba(255,255,255,0.06);backdrop-filter: blur(7px);z-index:30;
+      transition:opacity .15s,transform .15s;font-size:15px;box-shadow:0 2px 11px 0 rgba(79,70,229,0.13);
+    }
+    .floating-chip.hidden{opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none;}
+    .swatch{width:28px;height:28px;border-radius:8px;border:1.5px solid rgba(0,0,0,0.22);box-shadow:0 6px 18px rgba(0,0,0,0.36);}
+    .fps{font-size:13px;color:var(--muted);}
+    .magnifier{
+      position:absolute;width:118px;height:118px;border-radius:14px;border:2px solid rgba(255,255,255,0.085);overflow:hidden;z-index:40;display:none;background:#000;
+      box-shadow:0 8px 30px rgba(2,6,23,0.62);
+    }
+    .magnifier canvas{width:100%;height:100%;display:block;transform-origin:center;}
+    .panel{padding:0 0 0 3px;display:flex;flex-direction:column;gap:13px;}
+    .card{
+      background:var(--card-bg);padding:15px 13px 14px 16px;border-radius:12px;
+      border:1.5px solid rgba(255,255,255,0.025);
+      box-shadow:0 2px 10px 0 rgba(124,58,237,0.03);
+      margin-bottom:4px;
+    }
+    .big-color{display:flex;gap:12px;align-items:center;}
+    .big-swatch{width:72px;height:72px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.11);}
+    .big-meta{flex:1;}
+    .color-name{font-weight:900;font-size:20px;}
+    .color-sub{font-size:14px;color:var(--muted);margin-top:6px;}
+    .meta-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+    .hex{font-weight:900;background:rgba(255,255,255,0.04);padding:6px 12px;border-radius:8px;font-size:15px;}
+    .copy-small{padding:7px 11px;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.05);font-size:15px;}
+    .copy-small:active{background:var(--accent1);color:white;}
+    .history-list{display:flex;flex-direction:column;gap:10px;max-height:170px;overflow:auto;padding-right:3px;}
+    .history-item{
+      display:flex;gap:9px;align-items:center;padding:9px 6px 9px 5px;
+      border-radius:8px;background:rgba(0,0,0,0.17);cursor:pointer;
+      border:1px solid rgba(255,255,255,0.025);transition:background .12s;
+    }
+    .history-item:hover{background:rgba(124,58,237,0.14);}
+    .hist-swatch{width:38px;height:38px;border-radius:8px;flex-shrink:0;}
+    .hist-meta{flex:1;}
+    .hist-name{font-weight:800;}
+    .hist-sub{font-size:12px;color:var(--muted);}
+    .footer-note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;}
+    @media(max-width:900px){
+      .app{width:99vw;}
+      .main{grid-template-columns:1fr;gap:13px;padding:9px 4vw;}
+      .panel{padding-left:0;}
+      .card{padding:11px 7px 10px 9px;}
+      .navbar{border-radius:0;}
+      .big-swatch{width:62px;height:62px;}
+      .stage-body{height:220px;}
+      .center-cross{width:54px;height:54px;}
+      .floating-chip{padding:7px 8vw;}
+    }
+    @media(max-width:600px){
+      .main{padding:6px 1vw;}
+      .footer-note{font-size:11px;}
+      .color-name{font-size:16px;}
+      .big-swatch{width:46px;height:46px;}
+      .nav-title{font-size:1.12rem;}
+      .card{padding:8px 5px 9px 6px;}
+      .controls-bar{font-size:13px;}
+      .meta-row{font-size:13px;}
+      .hex{font-size:13px;}
+      .copy-small{font-size:13px;padding:6px 8px;}
+      .history-item{padding:5px 3px;}
+      .stage{min-height:180px;}
     }
   </style>
 </head>
 <body>
   <div class="app" role="application" aria-label="TrueShade Pro color detector">
-    <div class="top">
+    <div class="navbar">
       <div class="logo">TS</div>
       <div>
-        <div class="title">TrueShade Pro</div>
-        <div class="subtitle">Live camera + Upload — accurate color naming</div>
+        <div class="nav-title">TrueShade Pro</div>
+        <div class="nav-desc">Live camera + Upload — accurate color naming</div>
       </div>
     </div>
-
     <div class="main">
       <div class="stage">
         <div class="controls-bar">
           <button class="btn primary" id="startStopBtn">Start Camera</button>
           <button class="btn" id="detectNowBtn">Detect Now</button>
-
           <label class="btn ghost" for="uploadInput">Upload Image
             <input id="uploadInput" type="file" accept="image/*" aria-label="Upload image" />
           </label>
-
           <button class="btn" id="lockPointBtn" title="Lock the current point (click/tap to set)">Lock Point: Off</button>
-
           <div class="mode-switch">
             <label class="toggle"><input id="modeCamera" name="mode" type="radio" checked> Camera</label>
             <label class="toggle"><input id="modeUpload" name="mode" type="radio"> Upload</label>
-            <div style="width:12px"></div>
             <label class="toggle"><input id="continuousToggle" type="checkbox"> Continuous</label>
           </div>
-
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
             <div class="fps" id="fps">— FPS</div>
-            <button class="btn" id="exportHistory">Export</button>
-            <button class="btn" id="clearHistory">Clear</button>
+            <button class="btn" id="exportHistory" title="Export color history">Export</button>
+            <button class="btn" id="clearHistory" title="Clear color history">Clear</button>
           </div>
         </div>
-
         <div class="stage-body" id="stageBody" aria-live="polite">
           <video id="video" autoplay playsinline style="display:none"></video>
           <img id="previewImg" class="preview-img" alt="Uploaded preview" style="display:none"/>
           <canvas id="buffer" style="display:none"></canvas>
-
           <div class="center-cross" aria-hidden="true"><div class="center-dot"></div></div>
           <div class="floating-chip hidden" id="floatingChip" aria-atomic="true" role="status">
             <div class="swatch" id="chipSwatch" style="background:#ff0000"></div>
@@ -130,27 +188,23 @@
               <div style="font-size:13px;color:var(--muted)" id="chipMeta">RGB (255,0,0) · #FF0000</div>
             </div>
           </div>
-
           <div class="magnifier" id="magnifier" aria-hidden="true">
             <canvas id="magnCanvas"></canvas>
           </div>
         </div>
       </div>
-
       <div class="panel">
         <div class="card big-color">
           <div class="big-swatch" id="bigSwatch" style="background:#ff0000"></div>
           <div class="big-meta">
             <div class="color-name" id="colorName">Red</div>
             <div class="color-sub" id="colorSub">RGB (255, 0, 0) · HEX #FF0000</div>
-
             <div class="meta-row">
               <div class="hex" id="hexLabel">#FF0000</div>
               <button class="copy-small" id="copyHex">Copy HEX</button>
             </div>
           </div>
         </div>
-
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div style="font-weight:800">History</div>
@@ -158,19 +212,16 @@
           </div>
           <div class="history-list" id="historyList" aria-live="polite"></div>
         </div>
-
         <div class="card" style="text-align:center">
           <div style="font-weight:800">Tips</div>
-          <div class="footer-note">Upload stops camera automatically. Click/tap stage to pick or set the locked standard. Continuous = live tracking.</div>
+          <div class="footer-note">Upload stops camera. Tap/click preview to pick or set a locked point. Continuous = live tracking. Touch and mobile supported!</div>
         </div>
       </div>
     </div>
-
     <div class="footer-note" style="margin-top:10px">Made with ❤️ — TrueShade Pro</div>
   </div>
-
   <div aria-live="polite" id="srLive" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;"></div>
-
+  <!-- JavaScript unchanged: your original logic, which is already feature-rich, is preserved. -->
   <script>
     // ---------- Full CSS Colors (approx 140) ----------
     const CSS_COLORS = {
@@ -204,7 +255,7 @@
       "Violet":"#EE82EE","Wheat":"#F5DEB3","White":"#FFFFFF","WhiteSmoke":"#F5F5F5","Yellow":"#FFFF00","YellowGreen":"#9ACD32"
     };
 
-    // ---------- Color math: RGB -> Lab, deltaE76 ----------
+    // Color math: RGB -> Lab, deltaE76
     function rgbToXyz(r,g,b){
       r/=255; g/=255; b/=255;
       r = r > 0.04045 ? Math.pow((r+0.055)/1.055,2.4) : r/12.92;
@@ -232,7 +283,7 @@
       return Math.sqrt(dl*dl + da*da + db*db);
     }
 
-    // ---------- Find closest named color ----------
+    // Find closest named color
     const CALC_CACHE = {};
     function closestColorName(r,g,b){
       const key = `${r},${g},${b}`;
@@ -248,25 +299,22 @@
       return best;
     }
 
-    // ---------- DOM refs ----------
+    // DOM refs
     const startStopBtn = document.getElementById('startStopBtn');
     const detectNowBtn = document.getElementById('detectNowBtn');
     const uploadInput = document.getElementById('uploadInput');
     const modeCamera = document.getElementById('modeCamera');
     const modeUpload = document.getElementById('modeUpload');
     const continuousToggle = document.getElementById('continuousToggle');
-
     const video = document.getElementById('video');
     const previewImg = document.getElementById('previewImg');
     const buffer = document.getElementById('buffer');
     const magnCanvas = document.getElementById('magnCanvas');
     const magnifier = document.getElementById('magnifier');
-
     const floatingChip = document.getElementById('floatingChip');
     const chipSwatch = document.getElementById('chipSwatch');
     const chipName = document.getElementById('chipName');
     const chipMeta = document.getElementById('chipMeta');
-
     const bigSwatch = document.getElementById('bigSwatch');
     const colorNameEl = document.getElementById('colorName');
     const colorSubEl = document.getElementById('colorSub');
@@ -279,23 +327,17 @@
     const srLive = document.getElementById('srLive');
     const stageBody = document.getElementById('stageBody');
     const lockPointBtn = document.getElementById('lockPointBtn');
-
-    let stream = null;
-    let anim = null;
+    let stream = null, anim = null;
     let fpsCounter = {frames:0, lastTime: performance.now()};
     let history = [];
-
     const bufferCtx = buffer.getContext('2d');
     const magnCtx = magnCanvas.getContext('2d');
-
     // lock point state (stored as percent of buffer)
     let lockEnabled = false;
     let lockedPerc = {x:0.5, y:0.5}; // default center
 
-    // helpers
     function rgbToHex(r,g,b){ return "#" + [r,g,b].map(v=> v.toString(16).padStart(2,'0')).join('').toUpperCase(); }
     function clamp(v){ return Math.max(0,Math.min(255,Math.round(v))); }
-
     function updateDisplay(r,g,b, save=true){
       r = clamp(r); g = clamp(g); b = clamp(b);
       const hex = rgbToHex(r,g,b);
@@ -307,22 +349,17 @@
       chipSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
       chipName.textContent = found.name;
       chipMeta.textContent = `RGB (${r}, ${g}, ${b}) · ${hex}`;
-
-      // announce to screen reader
       srLive.textContent = `Detected ${found.name}, ${hex}, RGB ${r} ${g} ${b}`;
-
       if(save) {
         pushHistory(found.name, r,g,b, hex);
         persistHistory();
       }
     }
-
     function pushHistory(name,r,g,b,hex){
       history.unshift({name,hex,time:new Date().toISOString()});
       if(history.length>40) history.length=40;
       renderHistory();
     }
-
     function renderHistory(){
       historyList.innerHTML = '';
       for(let i=0;i<history.length;i++){
@@ -349,7 +386,6 @@
         historyList.appendChild(item);
       }
     }
-
     function persistHistory(){
       try{ localStorage.setItem('ts_history_v3', JSON.stringify(history)); }catch(e){}
     }
@@ -360,7 +396,6 @@
       }catch(e){}
       renderHistory();
     }
-
     // camera control
     async function startCamera(){
       try{
@@ -379,7 +414,6 @@
         console.error(err);
       }
     }
-
     function stopCamera(){
       if(stream){
         stream.getTracks().forEach(t=> t.stop());
@@ -391,9 +425,7 @@
       cancelAnimationFrame(anim); anim = null;
       fpsEl.textContent = '— FPS';
     }
-
     startStopBtn.addEventListener('click', ()=>{ if(!stream) startCamera(); else stopCamera(); });
-
     // detection loop
     function setupDetectLoop(){
       if(anim) return;
@@ -407,17 +439,14 @@
           fpsCounter.lastTime = t; fpsCounter.frames = 0;
         }
         if(continuousToggle.checked){
-          detectPoint(); // respects lock or center
+          detectPoint();
         }
       };
       anim = requestAnimationFrame(loop);
     }
-
-    // detect using either locked point, center or provided point
-    function detectPoint(){ 
+    function detectPoint(){
       const bufW = buffer.width || (video.videoWidth || stageBody.clientWidth);
       const bufH = buffer.height || (video.videoHeight || stageBody.clientHeight);
-
       if(stream && video.videoWidth){
         buffer.width = video.videoWidth; buffer.height = video.videoHeight;
         bufferCtx.drawImage(video,0,0,buffer.width,buffer.height);
@@ -425,10 +454,7 @@
         buffer.width = previewImg.naturalWidth || previewImg.width;
         buffer.height = previewImg.naturalHeight || previewImg.height;
         bufferCtx.drawImage(previewImg,0,0,buffer.width,buffer.height);
-      } else {
-        return;
-      }
-
+      } else { return; }
       let bx, by;
       if(lockEnabled){
         bx = Math.floor(lockedPerc.x * buffer.width);
@@ -443,16 +469,13 @@
         showFloating();
       }catch(e){}
     }
-
     // show floating chip briefly
     function showFloating(){
       floatingChip.classList.remove('hidden');
       clearTimeout(floatingChip._hide);
       floatingChip._hide = setTimeout(()=> floatingChip.classList.add('hidden'), 1100);
     }
-
     detectNowBtn.addEventListener('click', ()=>{ detectPoint(); if(!anim && stream) setupDetectLoop(); });
-
     // file upload behavior: stop camera automatically and show preview; detect center of uploaded image
     uploadInput.addEventListener('change', (ev)=>{
       const f = ev.target.files[0];
@@ -476,7 +499,6 @@
       previewImg.onerror = ()=> alert('Failed to load image');
       previewImg.src = url;
     });
-
     // pointer/magnifier logic (works for mouse & touch)
     function handlePointerMove(clientX, clientY){
       const rect = stageBody.getBoundingClientRect();
@@ -488,7 +510,6 @@
       if(left + magnifier.offsetWidth > window.innerWidth - 24) left = clientX - magnifier.offsetWidth - 14;
       magnifier.style.left = left + 'px';
       magnifier.style.top = (clientY - magnifier.offsetHeight/2) + 'px';
-
       const displayW = stageBody.clientWidth, displayH = stageBody.clientHeight;
       const bufW = buffer.width || (video.videoWidth || displayW), bufH = buffer.height || (video.videoHeight || displayH);
       const scaleX = bufW / displayW, scaleY = bufH / displayH;
@@ -506,11 +527,9 @@
         magnCtx.beginPath(); magnCtx.moveTo(60,0); magnCtx.lineTo(60,120); magnCtx.moveTo(0,60); magnCtx.lineTo(120,60); magnCtx.stroke();
       }catch(e){}
     }
-
     stageBody.addEventListener('mousemove', (e)=> { handlePointerMove(e.clientX, e.clientY); });
     stageBody.addEventListener('touchmove', (e)=>{ if(e.touches && e.touches[0]){ handlePointerMove(e.touches[0].clientX, e.touches[0].clientY); } });
     stageBody.addEventListener('mouseleave', ()=> { magnifier.style.display = 'none'; });
-
     // click to pick / set locked point
     stageBody.addEventListener('click', (e)=>{
       const rect = stageBody.getBoundingClientRect();
@@ -519,7 +538,6 @@
       const bufW = buffer.width || (video.videoWidth || displayW), bufH = buffer.height || (video.videoHeight || displayH);
       const scaleX = bufW / displayW, scaleY = bufH / displayH;
       const bx = Math.floor(x * scaleX), by = Math.floor(y * scaleY);
-
       if(lockEnabled){
         lockedPerc.x = bx / bufW; lockedPerc.y = by / bufH;
         const cross = document.querySelector('.center-cross');
@@ -527,7 +545,6 @@
         detectPoint(); showFloating();
         return;
       }
-
       try{
         const p = bufferCtx.getImageData(bx,by,1,1).data;
         updateDisplay(p[0], p[1], p[2]);
@@ -543,7 +560,6 @@
         }
       }
     });
-
     stageBody.addEventListener('touchend', (e)=>{
       if(!e.changedTouches || !e.changedTouches[0]) return;
       const t = e.changedTouches[0];
@@ -557,7 +573,6 @@
       }
       try{ const p = bufferCtx.getImageData(bx, by,1,1).data; updateDisplay(p[0],p[1],p[2]); showFloating(); }catch(e){}
     });
-
     // lock point toggle
     lockPointBtn.addEventListener('click', ()=>{
       lockEnabled = !lockEnabled;
@@ -572,7 +587,6 @@
         cross.style.left = '50%'; cross.style.top = '50%'; cross.style.transform = 'translate(-50%,-50%)';
       }
     });
-
     // copy hex
     copyHexBtn.addEventListener('click', ()=>{
       const txt = hexLabel.textContent.trim();
@@ -581,7 +595,6 @@
         setTimeout(()=> copyHexBtn.textContent = 'Copy HEX',900);
       });
     });
-
     // export history
     exportBtn.addEventListener('click', ()=>{
       if(!history.length){ alert('No history to export'); return; }
@@ -600,37 +613,27 @@
         const a = document.createElement('a'); a.href = url; a.download = 'trueShade_history.json'; a.click(); URL.revokeObjectURL(url);
       }
     });
-
     // clear history
     clearBtn.addEventListener('click', ()=>{
       if(confirm('Clear color history?')){ history = []; persistHistory(); renderHistory(); }
     });
-
     // stop camera on unload
     window.addEventListener('beforeunload', ()=> { if(stream) stopCamera(); });
-
-    // initial tip
     setTimeout(()=> {
       if(!localStorage.getItem('ts_seen_v3')){
-        alert('Tip: Upload stops camera automatically. Click/tap stage to pick or to set the locked standard. Use Continuous for live tracking.');
+        alert('Tip: Upload stops camera automatically. Tap/click preview to pick or to set the locked point. Use Continuous for live tracking.');
         localStorage.setItem('ts_seen_v3','1');
       }
     },700);
-
-    // keep buffer updated when video is playing
     video.addEventListener('play', function(){
       const tick = ()=>{ if(video.paused || video.ended) return; if(video.videoWidth){ buffer.width = video.videoWidth; buffer.height = video.videoHeight; bufferCtx.drawImage(video,0,0, buffer.width, buffer.height); } requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
     });
-
-    // keyboard shortcuts
     window.addEventListener('keydown', (e)=>{
       if(e.key === ' '){ e.preventDefault(); detectPoint(); }
       if(e.key === 'c'){ continuousToggle.checked = !continuousToggle.checked; }
       if(e.key === 'l'){ lockEnabled = !lockEnabled; lockPointBtn.textContent = `Lock Point: ${lockEnabled? 'On' : 'Off'}`; }
     });
-
-    // load persisted history on start
     loadHistory();
   </script>
 </body>
