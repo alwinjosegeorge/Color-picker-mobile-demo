@@ -120,6 +120,33 @@
     .hist-name{font-weight:800;}
     .hist-sub{font-size:12px;color:var(--muted);}
     .footer-note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;}
+    
+    /* New enhanced features styles */
+    .palette-section{margin-bottom:12px;}
+    .palette-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+    .palette-colors{display:flex;gap:6px;flex-wrap:wrap;}
+    .palette-color{
+      width:32px;height:32px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);
+      cursor:pointer;position:relative;transition:transform .1s;
+    }
+    .palette-color:hover{transform:scale(1.1);}
+    .palette-color::after{
+      content:attr(data-name);position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);
+      font-size:10px;color:var(--muted);white-space:nowrap;pointer-events:none;
+    }
+    .custom-name-item{
+      display:flex;gap:8px;align-items:center;padding:6px;background:rgba(0,0,0,0.1);
+      border-radius:6px;margin-bottom:4px;font-size:12px;
+    }
+    .custom-name-swatch{width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);}
+    .export-options{display:flex;gap:6px;margin-top:8px;}
+    .export-options .btn{font-size:11px;padding:4px 8px;}
+    .batch-upload{display:none;margin-top:8px;}
+    .batch-preview{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+    .batch-item{width:40px;height:40px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;position:relative;}
+    .batch-item:hover{transform:scale(1.05);}
+    .batch-item::after{content:'×';position:absolute;top:-5px;right:-5px;background:var(--danger);color:white;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;}
+    
     @media(max-width:900px){
       .app{width:99vw;}
       .main{grid-template-columns:1fr;gap:13px;padding:9px 4vw;}
@@ -169,9 +196,11 @@
             <label class="toggle"><input id="modeCamera" name="mode" type="radio" checked> Camera</label>
             <label class="toggle"><input id="modeUpload" name="mode" type="radio"> Upload</label>
             <label class="toggle"><input id="continuousToggle" type="checkbox"> Continuous</label>
+            <label class="toggle"><input id="apiToggle" type="checkbox" title="Use API for enhanced color naming"> API</label>
           </div>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
             <div class="fps" id="fps">— FPS</div>
+            <button class="btn" id="batchModeBtn" title="Batch processing mode">Batch</button>
             <button class="btn" id="exportHistory" title="Export color history">Export</button>
             <button class="btn" id="clearHistory" title="Clear color history">Clear</button>
           </div>
@@ -191,6 +220,16 @@
           <div class="magnifier" id="magnifier" aria-hidden="true">
             <canvas id="magnCanvas"></canvas>
           </div>
+          <div class="batch-upload" id="batchUpload">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+              <label class="btn ghost" for="batchInput" style="font-size:12px;padding:6px 12px;">Select Images
+                <input id="batchInput" type="file" accept="image/*" multiple style="display:none;">
+              </label>
+              <button class="btn" id="processBatchBtn" style="font-size:12px;padding:6px 12px;">Process All</button>
+              <button class="btn ghost" id="clearBatchBtn" style="font-size:12px;padding:6px 12px;">Clear</button>
+            </div>
+            <div class="batch-preview" id="batchPreview"></div>
+          </div>
         </div>
       </div>
       <div class="panel">
@@ -203,6 +242,54 @@
               <div class="hex" id="hexLabel">#FF0000</div>
               <button class="copy-small" id="copyHex">Copy HEX</button>
             </div>
+            <div class="color-formats" id="colorFormats" style="margin-top:8px;font-size:12px;color:var(--muted);">
+              <div>HSL: <span id="hslValue">0°, 100%, 50%</span></div>
+              <div>HSV: <span id="hsvValue">0°, 100%, 100%</span></div>
+              <div>CMYK: <span id="cmykValue">0%, 100%, 100%, 0%</span></div>
+              <div style="margin-top:4px;font-size:10px;opacity:0.7;">Source: <span id="colorSource">Local</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-weight:800">Color Palettes</div>
+            <button class="btn ghost" id="generatePaletteBtn" style="font-size:12px;padding:4px 8px;">Generate</button>
+          </div>
+          <div id="paletteContainer" style="display:none;">
+            <div class="palette-section">
+              <div class="palette-title">Complementary</div>
+              <div class="palette-colors" id="complementaryPalette"></div>
+            </div>
+            <div class="palette-section">
+              <div class="palette-title">Analogous</div>
+              <div class="palette-colors" id="analogousPalette"></div>
+            </div>
+            <div class="palette-section">
+              <div class="palette-title">Triadic</div>
+              <div class="palette-colors" id="triadicPalette"></div>
+            </div>
+            <div class="palette-section">
+              <div class="palette-title">Tetradic</div>
+              <div class="palette-colors" id="tetradicPalette"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-weight:800">Color Blindness</div>
+            <select id="colorBlindSelect" style="background:var(--glass);border:1px solid rgba(255,255,255,0.1);color:#eef2ff;padding:4px 8px;border-radius:6px;font-size:12px;">
+              <option value="normal">Normal</option>
+              <option value="protanopia">Protanopia</option>
+              <option value="deuteranopia">Deuteranopia</option>
+              <option value="tritanopia">Tritanopia</option>
+            </select>
+          </div>
+          <div id="colorBlindPreview" style="display:flex;gap:8px;align-items:center;">
+            <div class="swatch" id="normalSwatch" style="width:40px;height:40px;background:#ff0000;"></div>
+            <div class="swatch" id="simulatedSwatch" style="width:40px;height:40px;background:#ff0000;"></div>
+            <div style="font-size:12px;color:var(--muted);">Normal → Simulated</div>
           </div>
         </div>
         <div class="card">
@@ -210,11 +297,28 @@
             <div style="font-weight:800">History</div>
             <div style="font-size:13px;color:var(--muted)">Click to apply · Copy quick</div>
           </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" id="historySearch" placeholder="Search colors..." style="flex:1;background:var(--glass);border:1px solid rgba(255,255,255,0.1);color:#eef2ff;padding:6px 8px;border-radius:6px;font-size:12px;">
+            <button class="btn ghost" id="clearSearchBtn" style="font-size:12px;padding:6px 8px;">Clear</button>
+          </div>
           <div class="history-list" id="historyList" aria-live="polite"></div>
         </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-weight:800">Custom Names</div>
+            <button class="btn ghost" id="addCustomNameBtn" style="font-size:12px;padding:4px 8px;">Add Name</button>
+          </div>
+          <div id="customNamesList" style="max-height:120px;overflow-y:auto;"></div>
+        </div>
         <div class="card" style="text-align:center">
-          <div style="font-weight:800">Tips</div>
-          <div class="footer-note">Upload stops camera. Tap/click preview to pick or set a locked point. Continuous = live tracking. Touch and mobile supported!</div>
+          <div style="font-weight:800">Tips & Shortcuts</div>
+          <div class="footer-note" style="text-align:left;font-size:11px;line-height:1.4;">
+            <div><strong>Basic:</strong> Space=detect, C=continuous, L=lock point</div>
+            <div><strong>Enhanced:</strong> P=palette, B=batch, A=API, N=custom name</div>
+            <div><strong>Features:</strong> Color blindness simulation, multiple formats (HSL/HSV/CMYK), palette generation, batch processing, custom names, enhanced export (PNG/SVG)</div>
+            <div><strong>Mobile:</strong> Touch and mobile fully supported!</div>
+          </div>
         </div>
       </div>
     </div>
@@ -283,8 +387,120 @@
       return Math.sqrt(dl*dl + da*da + db*db);
     }
 
+    // Additional Color Format Conversions
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) h = s = 0;
+      else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+
+    function rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, v = max;
+      const d = max - min;
+      s = max === 0 ? 0 : d / max;
+      if (max === min) h = 0;
+      else {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return [Math.round(h * 360), Math.round(s * 100), Math.round(v * 100)];
+    }
+
+    function rgbToCmyk(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const k = 1 - Math.max(r, g, b);
+      if (k === 1) return [0, 0, 0, 100];
+      const c = (1 - r - k) / (1 - k);
+      const m = (1 - g - k) / (1 - k);
+      const y = (1 - b - k) / (1 - k);
+      return [Math.round(c * 100), Math.round(m * 100), Math.round(y * 100), Math.round(k * 100)];
+    }
+
+    // Color Palette Generation
+    function generatePalette(r, g, b) {
+      const hsl = rgbToHsl(r, g, b);
+      const h = hsl[0];
+      
+      return {
+        complementary: [
+          { name: 'Original', rgb: [r, g, b], hex: rgbToHex(r, g, b) },
+          { name: 'Complementary', rgb: hslToRgb((h + 180) % 360, hsl[1], hsl[2]), hex: '' }
+        ],
+        analogous: [
+          { name: 'Original', rgb: [r, g, b], hex: rgbToHex(r, g, b) },
+          { name: 'Analogous 1', rgb: hslToRgb((h + 30) % 360, hsl[1], hsl[2]), hex: '' },
+          { name: 'Analogous 2', rgb: hslToRgb((h - 30 + 360) % 360, hsl[1], hsl[2]), hex: '' }
+        ],
+        triadic: [
+          { name: 'Original', rgb: [r, g, b], hex: rgbToHex(r, g, b) },
+          { name: 'Triadic 1', rgb: hslToRgb((h + 120) % 360, hsl[1], hsl[2]), hex: '' },
+          { name: 'Triadic 2', rgb: hslToRgb((h + 240) % 360, hsl[1], hsl[2]), hex: '' }
+        ],
+        tetradic: [
+          { name: 'Original', rgb: [r, g, b], hex: rgbToHex(r, g, b) },
+          { name: 'Tetradic 1', rgb: hslToRgb((h + 90) % 360, hsl[1], hsl[2]), hex: '' },
+          { name: 'Tetradic 2', rgb: hslToRgb((h + 180) % 360, hsl[1], hsl[2]), hex: '' },
+          { name: 'Tetradic 3', rgb: hslToRgb((h + 270) % 360, hsl[1], hsl[2]), hex: '' }
+        ]
+      };
+    }
+
+    function hslToRgb(h, s, l) {
+      h /= 360; s /= 100; l /= 100;
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      if (s === 0) return [Math.round(l * 255), Math.round(l * 255), Math.round(l * 255)];
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      return [
+        Math.round(hue2rgb(p, q, h + 1/3) * 255),
+        Math.round(hue2rgb(p, q, h) * 255),
+        Math.round(hue2rgb(p, q, h - 1/3) * 255)
+      ];
+    }
+
+    // Color Blindness Simulation
+    function simulateColorBlindness(r, g, b, type) {
+      switch (type) {
+        case 'protanopia':
+          return [0.567 * r + 0.433 * g, 0.558 * r + 0.442 * g, 0.242 * g + 0.758 * b];
+        case 'deuteranopia':
+          return [0.625 * r + 0.375 * g, 0.7 * r + 0.3 * g, 0.3 * g + 0.7 * b];
+        case 'tritanopia':
+          return [0.95 * r + 0.05 * g, 0.433 * r + 0.567 * g, 0.475 * g + 0.525 * b];
+        default:
+          return [r, g, b];
+      }
+    }
+
     // Find closest named color
     const CALC_CACHE = {};
+    const API_CACHE = {};
+    
     function closestColorName(r,g,b){
       const key = `${r},${g},${b}`;
       if(CALC_CACHE[key]) return CALC_CACHE[key];
@@ -297,6 +513,41 @@
       }
       CALC_CACHE[key] = best;
       return best;
+    }
+
+    // Enhanced color naming with API integration
+    async function getEnhancedColorName(r, g, b) {
+      const hex = rgbToHex(r, g, b);
+      const cacheKey = `api_${hex}`;
+      
+      // Check cache first
+      if (API_CACHE[cacheKey]) {
+        return API_CACHE[cacheKey];
+      }
+      
+      try {
+        // Try to get color name from The Color API
+        const response = await fetch(`https://www.thecolorapi.com/id?hex=${hex.replace('#', '')}`);
+        if (response.ok) {
+          const data = await response.json();
+          const apiResult = {
+            name: data.name?.value || 'Unknown',
+            hex: data.hex?.value || hex,
+            dist: 0,
+            source: 'API'
+          };
+          API_CACHE[cacheKey] = apiResult;
+          return apiResult;
+        }
+      } catch (error) {
+        console.log('API unavailable, using local matching');
+      }
+      
+      // Fallback to local matching
+      const localResult = closestColorName(r, g, b);
+      localResult.source = 'Local';
+      API_CACHE[cacheKey] = localResult;
+      return localResult;
     }
 
     // DOM refs
@@ -339,18 +590,41 @@
 
     function rgbToHex(r,g,b){ return "#" + [r,g,b].map(v=> v.toString(16).padStart(2,'0')).join('').toUpperCase(); }
     function clamp(v){ return Math.max(0,Math.min(255,Math.round(v))); }
-    function updateDisplay(r,g,b, save=true){
+    async function updateDisplay(r,g,b, save=true){
       r = clamp(r); g = clamp(g); b = clamp(b);
       const hex = rgbToHex(r,g,b);
-      const found = closestColorName(r,g,b);
-      colorNameEl.textContent = found.name;
-      colorSubEl.textContent = `RGB (${r}, ${g}, ${b}) · HEX ${hex}`;
-      hexLabel.textContent = hex;
+      
+      // Update visual elements immediately
       bigSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
       chipSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      hexLabel.textContent = hex;
+      
+      // Update color formats
+      const hsl = rgbToHsl(r, g, b);
+      const hsv = rgbToHsv(r, g, b);
+      const cmyk = rgbToCmyk(r, g, b);
+      
+      document.getElementById('hslValue').textContent = `${hsl[0]}°, ${hsl[1]}%, ${hsl[2]}%`;
+      document.getElementById('hsvValue').textContent = `${hsv[0]}°, ${hsv[1]}%, ${hsv[2]}%`;
+      document.getElementById('cmykValue').textContent = `${cmyk[0]}%, ${cmyk[1]}%, ${cmyk[2]}%, ${cmyk[3]}%`;
+      
+      // Update color blindness simulation
+      updateColorBlindnessSimulation(r, g, b);
+      
+      // Get color name (respect API toggle)
+      const useAPI = document.getElementById('apiToggle').checked;
+      const found = useAPI ? await getEnhancedColorName(r, g, b) : closestColorName(r, g, b);
+      
+      // Update name display
+      colorNameEl.textContent = found.name;
+      colorSubEl.textContent = `RGB (${r}, ${g}, ${b}) · HEX ${hex}`;
       chipName.textContent = found.name;
       chipMeta.textContent = `RGB (${r}, ${g}, ${b}) · ${hex}`;
       srLive.textContent = `Detected ${found.name}, ${hex}, RGB ${r} ${g} ${b}`;
+      
+      // Update source indicator
+      document.getElementById('colorSource').textContent = found.source || 'Local';
+      
       if(save) {
         pushHistory(found.name, r,g,b, hex);
         persistHistory();
@@ -656,7 +930,310 @@
       if(e.key === ' '){ e.preventDefault(); detectPoint(); }
       if(e.key === 'c'){ continuousToggle.checked = !continuousToggle.checked; continuousToggle.dispatchEvent(new Event('change')); }
       if(e.key === 'l'){ lockEnabled = !lockEnabled; lockPointBtn.textContent = `Lock Point: ${lockEnabled? 'On' : 'Off'}`; }
+      if(e.key === 'p'){ document.getElementById('generatePaletteBtn').click(); }
+      if(e.key === 'b'){ document.getElementById('batchModeBtn').click(); }
+      if(e.key === 'a'){ document.getElementById('apiToggle').checked = !document.getElementById('apiToggle').checked; }
+      if(e.key === 'n'){ document.getElementById('addCustomNameBtn').click(); }
     });
+
+    // Enhanced Features Implementation
+    
+    // Color Blindness Simulation
+    function updateColorBlindnessSimulation(r, g, b) {
+      const colorBlindType = document.getElementById('colorBlindSelect').value;
+      const normalSwatch = document.getElementById('normalSwatch');
+      const simulatedSwatch = document.getElementById('simulatedSwatch');
+      
+      normalSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      
+      if (colorBlindType === 'normal') {
+        simulatedSwatch.style.background = `rgb(${r}, ${g}, ${b})`;
+      } else {
+        const simulated = simulateColorBlindness(r, g, b, colorBlindType);
+        simulatedSwatch.style.background = `rgb(${Math.round(simulated[0])}, ${Math.round(simulated[1])}, ${Math.round(simulated[2])})`;
+      }
+    }
+
+    // Color Palette Generation
+    function renderPalette(palette, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      
+      palette.forEach(color => {
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'palette-color';
+        colorDiv.style.background = `rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})`;
+        colorDiv.setAttribute('data-name', color.name);
+        colorDiv.addEventListener('click', () => {
+          updateDisplay(color.rgb[0], color.rgb[1], color.rgb[2]);
+        });
+        container.appendChild(colorDiv);
+      });
+    }
+
+    // History Search
+    function filterHistory(searchTerm) {
+      const items = document.querySelectorAll('.history-item');
+      items.forEach(item => {
+        const name = item.querySelector('.hist-name').textContent.toLowerCase();
+        const hex = item.querySelector('.hist-sub').textContent.toLowerCase();
+        const matches = name.includes(searchTerm.toLowerCase()) || hex.includes(searchTerm.toLowerCase());
+        item.style.display = matches ? 'flex' : 'none';
+      });
+    }
+
+    // Custom Color Names
+    let customNames = JSON.parse(localStorage.getItem('ts_custom_names') || '[]');
+
+    function renderCustomNames() {
+      const container = document.getElementById('customNamesList');
+      container.innerHTML = '';
+      
+      customNames.forEach((custom, index) => {
+        const item = document.createElement('div');
+        item.className = 'custom-name-item';
+        item.innerHTML = `
+          <div class="custom-name-swatch" style="background:${custom.hex}"></div>
+          <div style="flex:1;font-weight:700;">${custom.name}</div>
+          <div style="font-size:10px;color:var(--muted);">${custom.hex}</div>
+          <button class="copy-small" style="font-size:10px;padding:2px 6px;" onclick="navigator.clipboard.writeText('${custom.hex}')">Copy</button>
+          <button class="copy-small" style="font-size:10px;padding:2px 6px;background:var(--danger);" onclick="removeCustomName(${index})">×</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function addCustomName(name, hex) {
+      customNames.push({ name, hex, time: new Date().toISOString() });
+      localStorage.setItem('ts_custom_names', JSON.stringify(customNames));
+      renderCustomNames();
+    }
+
+    function removeCustomName(index) {
+      customNames.splice(index, 1);
+      localStorage.setItem('ts_custom_names', JSON.stringify(customNames));
+      renderCustomNames();
+    }
+
+    // Batch Processing
+    let batchImages = [];
+    let batchMode = false;
+
+    function toggleBatchMode() {
+      batchMode = !batchMode;
+      const batchUpload = document.getElementById('batchUpload');
+      const batchModeBtn = document.getElementById('batchModeBtn');
+      
+      if (batchMode) {
+        batchUpload.style.display = 'block';
+        batchModeBtn.style.background = 'linear-gradient(90deg,var(--success),#059669)';
+        batchModeBtn.textContent = 'Exit Batch';
+      } else {
+        batchUpload.style.display = 'none';
+        batchModeBtn.style.background = '';
+        batchModeBtn.textContent = 'Batch';
+        batchImages = [];
+        document.getElementById('batchPreview').innerHTML = '';
+      }
+    }
+
+    function processBatchImage(file) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          
+          // Sample center color
+          const centerX = Math.floor(img.width / 2);
+          const centerY = Math.floor(img.height / 2);
+          const pixelData = ctx.getImageData(centerX, centerY, 1, 1).data;
+          
+          resolve({
+            name: file.name,
+            rgb: [pixelData[0], pixelData[1], pixelData[2]],
+            hex: rgbToHex(pixelData[0], pixelData[1], pixelData[2]),
+            url: URL.createObjectURL(file)
+          });
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // Enhanced Export with PNG/SVG
+    function exportColorSwatch(format) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 200;
+      canvas.height = 200;
+      
+      const currentColor = bigSwatch.style.background;
+      ctx.fillStyle = currentColor;
+      ctx.fillRect(0, 0, 200, 200);
+      
+      if (format === 'png') {
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `color_${hexLabel.textContent.replace('#', '')}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      } else if (format === 'svg') {
+        const svg = `
+          <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="200" height="200" fill="${currentColor}"/>
+            <text x="100" y="100" text-anchor="middle" fill="white" font-family="Arial" font-size="14">${hexLabel.textContent}</text>
+          </svg>
+        `;
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `color_${hexLabel.textContent.replace('#', '')}.svg`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    // Event Listeners for Enhanced Features
+    document.getElementById('generatePaletteBtn').addEventListener('click', () => {
+      const currentRgb = bigSwatch.style.background.match(/\d+/g);
+      if (currentRgb) {
+        const r = parseInt(currentRgb[0]);
+        const g = parseInt(currentRgb[1]);
+        const b = parseInt(currentRgb[2]);
+        const palette = generatePalette(r, g, b);
+        
+        // Update hex values for palette colors
+        Object.keys(palette).forEach(key => {
+          palette[key].forEach(color => {
+            if (!color.hex) {
+              color.hex = rgbToHex(color.rgb[0], color.rgb[1], color.rgb[2]);
+            }
+          });
+        });
+        
+        renderPalette(palette.complementary, 'complementaryPalette');
+        renderPalette(palette.analogous, 'analogousPalette');
+        renderPalette(palette.triadic, 'triadicPalette');
+        renderPalette(palette.tetradic, 'tetradicPalette');
+        
+        document.getElementById('paletteContainer').style.display = 'block';
+      }
+    });
+
+    document.getElementById('colorBlindSelect').addEventListener('change', () => {
+      const currentRgb = bigSwatch.style.background.match(/\d+/g);
+      if (currentRgb) {
+        updateColorBlindnessSimulation(parseInt(currentRgb[0]), parseInt(currentRgb[1]), parseInt(currentRgb[2]));
+      }
+    });
+
+    document.getElementById('historySearch').addEventListener('input', (e) => {
+      filterHistory(e.target.value);
+    });
+
+    document.getElementById('clearSearchBtn').addEventListener('click', () => {
+      document.getElementById('historySearch').value = '';
+      filterHistory('');
+    });
+
+    document.getElementById('addCustomNameBtn').addEventListener('click', () => {
+      const name = prompt('Enter custom color name:');
+      if (name && name.trim()) {
+        addCustomName(name.trim(), hexLabel.textContent);
+      }
+    });
+
+    document.getElementById('batchModeBtn').addEventListener('click', toggleBatchMode);
+
+    document.getElementById('batchInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        const result = await processBatchImage(file);
+        batchImages.push(result);
+      }
+      renderBatchPreview();
+    });
+
+    document.getElementById('processBatchBtn').addEventListener('click', () => {
+      batchImages.forEach(img => {
+        pushHistory(`Batch: ${img.name}`, img.rgb[0], img.rgb[1], img.rgb[2], img.hex);
+      });
+      persistHistory();
+      alert(`Processed ${batchImages.length} images!`);
+    });
+
+    document.getElementById('clearBatchBtn').addEventListener('click', () => {
+      batchImages.forEach(img => URL.revokeObjectURL(img.url));
+      batchImages = [];
+      renderBatchPreview();
+    });
+
+    function renderBatchPreview() {
+      const container = document.getElementById('batchPreview');
+      container.innerHTML = '';
+      
+      batchImages.forEach((img, index) => {
+        const item = document.createElement('div');
+        item.className = 'batch-item';
+        item.style.background = `rgb(${img.rgb[0]}, ${img.rgb[1]}, ${img.rgb[2]})`;
+        item.addEventListener('click', () => {
+          updateDisplay(img.rgb[0], img.rgb[1], img.rgb[2]);
+        });
+        item.addEventListener('click', (e) => {
+          if (e.target.tagName === 'DIV' && e.target.textContent === '×') {
+            batchImages.splice(index, 1);
+            URL.revokeObjectURL(img.url);
+            renderBatchPreview();
+          }
+        });
+        container.appendChild(item);
+      });
+    }
+
+    // Enhanced export with additional formats
+    const originalExportBtn = document.getElementById('exportHistory');
+    originalExportBtn.addEventListener('click', () => {
+      if(!history.length){ alert('No history to export'); return; }
+      
+      const exportOptions = document.createElement('div');
+      exportOptions.className = 'export-options';
+      exportOptions.innerHTML = `
+        <button class="btn" onclick="exportHistory('json')">JSON</button>
+        <button class="btn" onclick="exportHistory('csv')">CSV</button>
+        <button class="btn" onclick="exportColorSwatch('png')">PNG</button>
+        <button class="btn" onclick="exportColorSwatch('svg')">SVG</button>
+      `;
+      
+      // Replace the original export functionality
+      function exportHistory(format) {
+        if(format === 'csv'){
+          const rows = [['name','hex','time']];
+          for(const h of history) rows.push([h.name,h.hex,h.time]);
+          const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+          const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = 'trueShade_history.csv'; a.click(); URL.revokeObjectURL(url);
+        } else {
+          const compact = history.map(h => ({name:h.name,hex:h.hex,time:h.time}));
+          const blob = new Blob([JSON.stringify(compact, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = 'trueShade_history.json'; a.click(); URL.revokeObjectURL(url);
+        }
+      }
+      
+      // Show export options
+      const existingOptions = document.querySelector('.export-options');
+      if (existingOptions) existingOptions.remove();
+      originalExportBtn.parentNode.appendChild(exportOptions);
+    });
+
+    // Initialize enhanced features
+    renderCustomNames();
     loadHistory();
   </script>
 </body>
